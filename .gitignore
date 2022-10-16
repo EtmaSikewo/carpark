@@ -1,5 +1,9 @@
 # custom ingores
 .vscode
+testing
+
+shm_server*
+
 
 
 
