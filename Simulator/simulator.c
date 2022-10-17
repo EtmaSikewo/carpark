@@ -1,4 +1,63 @@
+
+// ░█████╗░░█████╗░██████╗░  ██████╗░░█████╗░██████╗░██╗░░██╗
+// ██╔══██╗██╔══██╗██╔══██╗  ██╔══██╗██╔══██╗██╔══██╗██║░██╔╝
+// ██║░░╚═╝███████║██████╔╝  ██████╔╝███████║██████╔╝█████═╝░
+// ██║░░██╗██╔══██║██╔══██╗  ██╔═══╝░██╔══██║██╔══██╗██╔═██╗░
+// ╚█████╔╝██║░░██║██║░░██║  ██║░░░░░██║░░██║██║░░██║██║░╚██╗
+// ░╚════╝░╚═╝░░╚═╝╚═╝░░╚═╝  ╚═╝░░░░░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝
+
+// ░██████╗██╗███╗░░░███╗██╗░░░██╗██╗░░░░░░█████╗░████████╗░█████╗░██████╗░
+// ██╔════╝██║████╗░████║██║░░░██║██║░░░░░██╔══██╗╚══██╔══╝██╔══██╗██╔══██╗
+// ╚█████╗░██║██╔████╔██║██║░░░██║██║░░░░░███████║░░░██║░░░██║░░██║██████╔╝
+// ░╚═══██╗██║██║╚██╔╝██║██║░░░██║██║░░░░░██╔══██║░░░██║░░░██║░░██║██╔══██╗
+// ██████╔╝██║██║░╚═╝░██║╚██████╔╝███████╗██║░░██║░░░██║░░░╚█████╔╝██║░░██║
+// ╚═════╝░╚═╝╚═╝░░░░░╚═╝░╚═════╝░╚══════╝╚═╝░░╚═╝░░░╚═╝░░░░╚════╝░╚═╝░░╚═╝
+
 // This program is the simulator for the car park system.
+
+// The simulator is in charge of the following:
+// --------------------------------------------
+// Simulate cars:
+// - Provide a random license plate number for each car
+// - Provide a random entry time for each car at a random entry gate
+// - Trigger a LPR camera to read the license plate number
+// - Provide a level of parking space required for each car
+// - Reject unauthorized cars
+// - Drive to the parking space and park
+// - Provide a random exit time for each car at a random exit gate
+// - Trigger a LPR camera to read the license plate number
+// - Drive out of the parking space and leave
+//  --------------------------------------------
+// Simulate boom gates:
+// - Open the boom gate when a car is approaching
+// - Boom gate will open and close after a set time upon recieving a signal from the manager
+// - Close the boom gate when a car has passed
+//  --------------------------------------------
+// Simulate LPR cameras:
+// - Read the license plate number of a car
+// - Send the license plate number to the manager
+//  --------------------------------------------
+// Simulate temperature
+// - Each parking level has a temperature sensor
+// - Update the temperature of each parking level frequently
+// - The temperature must be reasonable (e.g. 20-30 degrees)
+// - The temperature must be able to simulate a fire
+//  --------------------------------------------
+
+
+//  --------------------------------------------
+// Simualtor timings 
+//  --------------------------------------------
+// Car will generated every 1-100ms (random)
+// - the stdlib.h rand() function is fine, for example (but keep in mind
+// that you should protect calls to rand() with a mutex as rand() accesses a global variable
+// containing the current random seed.).
+// Once a car has reached the queue for a boom gate, it will wait for 2ms before triggering the LPR camera
+// Boom gate takes 10ms to open and close
+//Once a car has parked it will wait 100-10000ms (random) before leaving the level and triggering the LPR camera
+// It then takes a car a further 10ms to drive to a random exit and trigger the exit LPR camera
+// The temperature will change every 1-5ms (random) and will be between 20-40 degrees
+
 
 
 #include <stdio.h>
@@ -14,6 +73,65 @@
 #define floors 5
 #define spaces 20
 
+
+// Function to read the temperature of all parking levels 
+void checkTemperature(){
+    // This function will read the temperature of all parking levels
+    // The temperature will change every 1-5ms (random) and will be between 20-40 degrees
+    // Make an array of temperatures for each level
+    int temperature[floors];
+    // Loop through each level and generate a random temperature
+    for (int i = 0; i < floors; i++){
+        // Generate a random temperature between 20-40
+        temperature[i] = (rand() % (40 - 20 + 1)) + 20;
+        // Print the temperature of each level
+        printf("The temperature of level %d is %d degrees\n", i, temperature[i]);
+
+    }
+
+    // Return the temperature of each level
+    // return temperature;
+
+
+
+}
+
+// Function to simulate a fire
+void fire(){
+    // TODO
+}
+
+
+// Function to simulate a car
+void car(char license){
+    // Chose a random entry gate
+    int entry = rand() % entrances;
+
+}
+
+// Make a structure for the boom gate
+struct boomGate{
+    int boomGateID;
+    int boomGateStatus;
+    int boomGateTime;
+};
+
+// Make a structure for the car
+struct car{
+    char licensePlate[8];
+    int entryTime;
+    int exitTime;
+    int entryGate;
+    int exitGate;
+    int level;
+    int space;
+};
+
+// Function to simulate a boom gate
+// Provide the gate number, the entry or exit gate and request for the gate to open or close
+void boomGate(int gate, char entryOrExit, char openOrClose){
+    // TODO
+}
 
 
 
@@ -87,8 +205,6 @@ char *getPlate() {
 }
 
 
-
-// Print hello world
 int main(void)
 {
 
@@ -101,5 +217,11 @@ int main(void)
     // Call getPlate() to test it
     char *plate = getPlate();
     printf("%s\n", plate);
+
+    // Call checkTemperature() to test it
+    checkTemperature();
+
+
+    // Exit the program
     return 0;
 }
