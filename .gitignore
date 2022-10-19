@@ -1,6 +1,8 @@
 # custom ingores
 .vscode
 testing
+
+# build files
 manager
 simulator
 

@@ -1,63 +1,65 @@
+#include <pthread.h>
+
 #define ENTRANCES 5
 #define EXITS 5
 #define LEVELS 5
 #define PARKING_CAPACITY 20
 
-
-typedef struct lpr_sensor {
-    pthread_mutex_t mutex; 
+typedef struct lpr_sensor
+{
+    pthread_mutex_t mutex;
     pthread_cond_t cond;
-    char plate[6] = "000000";
-    byte[2];
+    char plate[6]; //  default value is "000000"
+    byte[2];       //  padding
 } lpr_sensor_t;
 
-
-typedef struct boom_gate {
+typedef struct boom_gate
+{
     pthread_mutex_t mutex;
     pthread_cond_t cond;
-    char status = "C";
-    byte[7];
+    char status; //  'C' = closed, 'O' = open, 'R' = raising, 'L' = lowering
+    byte[7];     //  padding
 } boom_gate_t;
 
-
-typedef struct information_sign {
+typedef struct information_sign
+{
     pthread_mutex_t mutex;
     pthread_cond_t cond;
-    char display = " ";
-    byte[7];
+    char display; //  default is ' '
+    byte[7];      //  padding
 } information_sign_t;
 
-
 //  struct for entrance
-typedef struct entrance {
+typedef struct entrance
+{
     lpr_sensor_t lpr_sensor;
     boom_gate_t boom_gate;
     information_sign_t information_sign;
 } entrance_t;
 
-
 //  struct for exit
-typedef struct exit {
+typedef struct exit
+{
     lpr_sensor_t lpr_sensor;
     boom_gate_t boom_gate;
 } exit_t;
 
-
 //  struct for levels
-typedef struct level {
+typedef struct level
+{
     lpr_sensor_t lpr_sensor;
     int16_t temperature_sensor;
-    char alarm = "0";
-    byte[5];
+    char alarm; // default is '0'
+    byte[5];    //  padding
 } level_t;
-
 
 /**
  * A shared memory control structure.
  */
-typedef struct shared_memory {
+typedef struct shared_memory
+{
     /// The name of the shared memory object.
-    const char* name;
+    const char *name;
 
     /// The file descriptor used to manage the shared memory object.
     int fd;
