@@ -6,7 +6,6 @@ simulator
 
 # test files for creating/accessing memory
 shm_server*
-shm_ipc*
 
 
 

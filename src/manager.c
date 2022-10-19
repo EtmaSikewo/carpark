@@ -32,12 +32,33 @@
 // }
 
 
+
 #include <stdio.h>
-#include "shared_mem_access.h"
+#include "mem_init.h"
+
+int currLevelCapacity[LEVELS];
+
+
+typedef struct car_manager {
+    char plate[6] = "000000";
+    int timeEntered;
+} car_manager_t;
+
+typedef struct level_manager {
+    int currLevelCapacity;
+    car_manager_t car_manager[PARKING_CAPACITY];
+} levels_t;
+
+levels_t levels[LEVELS];
+
 
 int main(void){
-    printf("%s:%s:%d \n", __FILE__, __FUNCTION__, __LINE__);
-    //  read in from the shared memory pool
-    memoryAccess();
+    // printf("%s:%s:%d \n", __FILE__, __FUNCTION__, __LINE__);
+    // //  read in from the shared memory pool
+    // memoryAccess();
+
+    someFunc(currLevelCapacity);
+
+
     return 0;
 }
