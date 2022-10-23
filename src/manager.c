@@ -42,11 +42,47 @@ typedef struct level_manager
 
 levels_t levels[LEVELS];
 
+// A function that opens a boomgate with mutex
+void open_boom_gate(boom_gate_t *boom_gate) {
+    pthread_mutex_lock(&boom_gate->mutex);
+    if (boom_gate->status == 'C') {
+        boom_gate->status = 'R';
+        pthread_mutex_unlock(&boom_gate->mutex);
+        usleep(10000);
+        pthread_mutex_lock(&boom_gate->mutex);
+        boom_gate->status = 'O';
+        pthread_mutex_unlock(&boom_gate->mutex);
+    } else {
+        pthread_mutex_unlock(&boom_gate->mutex);
+    }
+    pthread_cond_signal(&boom_gate->cond);
+    pthread_mutex_unlock(&boom_gate->mutex);
+}
+
+// A function that closes a boomgate with mutex
+void close_boom_gate(boom_gate_t *boom_gate) {
+    pthread_mutex_lock(&boom_gate->mutex);
+    if (boom_gate->status == 'O') {
+        boom_gate->status = 'L';
+        pthread_mutex_unlock(&boom_gate->mutex);
+        usleep(10000);
+        pthread_mutex_lock(&boom_gate->mutex);
+        boom_gate->status = 'C';
+        pthread_mutex_unlock(&boom_gate->mutex);
+    } else {
+        pthread_mutex_unlock(&boom_gate->mutex);
+    }
+    pthread_cond_signal(&boom_gate->cond);
+    pthread_mutex_unlock(&boom_gate->mutex);
+}
+
 int main(void)
 {
     // printf("%s:%s:%d \n", __FILE__, __FUNCTION__, __LINE__);
     // //  read in from the shared memory pool
     // memoryAccess();
+
+    open_boom_gate(&shared_memory->entrance[0].boom_gate);
 
     someFunc(currLevelCapacity);
 
