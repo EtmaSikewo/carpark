@@ -1,5 +1,11 @@
 #include <pthread.h>
 #include <stdint.h>
+#include <sys/mman.h>
+#include <stdbool.h>
+#include <sys/stat.h> /* For mode constants */
+#include <fcntl.h>    /* For O_* constants */
+#include <unistd.h>
+#include <sys/types.h>
 
 #define ENTRANCES 5
 #define EXITS 5
@@ -57,16 +63,60 @@ typedef struct level
 /**
  * A shared memory control structure.
  */
-typedef struct shared_memory
+typedef struct shared_memory_data
 {
-    /// The name of the shared memory object.
-    const char *name;
-
-    /// The file descriptor used to manage the shared memory object.
-    int fd;
-
-    /// Address of the shared data block.
     entrance_t entrance[ENTRANCES];
     exit_t exit[EXITS];
     level_t level[LEVELS];
+} shared_memory_data_t;
+
+/**
+ * A shared memory control structure.
+ */
+typedef struct shared_memory
+{
+    const char *name;
+    int fd;
+    shared_memory_data_t *data;
 } shared_memory_t;
+
+bool create_shared_object(shared_memory_t *shared_mem_obj, const char *shared_mem_name)
+{
+
+    shm_unlink(shared_mem_name);
+    shared_mem_obj->name = shared_mem_name;
+
+    if ((shared_mem_obj->fd = shm_open(shared_mem_name, O_CREAT | O_RDWR, 0666)) < 0)
+    {
+        shared_mem_obj->data = NULL;
+        return false;
+    }
+
+    if ((ftruncate(shared_mem_obj->fd, sizeof(shared_memory_data_t))) < 0)
+    {
+        shared_mem_obj->data = NULL;
+        return false;
+    }
+
+    char *sd;
+    if ((sd = mmap(0, sizeof(shared_memory_data_t), PROT_WRITE | PROT_READ, MAP_SHARED, shared_mem_obj->fd, 0)) == (char *)-1)
+    {
+        shared_mem_obj->data = MAP_FAILED;
+        return false;
+    }
+    shared_mem_obj->data = (shared_memory_data_t *)sd;
+
+    // If we reach this point we should return true.
+    return true;
+}
+
+void destroy_shared_object(shared_memory_t *shared_mem_obj)
+{
+    if (shared_mem_obj->name != (char *)"")
+    {
+        munmap(shared_mem_obj->data, sizeof(shared_memory_data_t));
+        shm_unlink(shared_mem_obj->name);
+        shared_mem_obj->fd = -1;
+        shared_mem_obj->data = NULL;
+    }
+}
