@@ -43,17 +43,30 @@ typedef struct level_manager
 levels_t levels[LEVELS];
 
 //create a function that sets the default value for boom gate
-void setBoomGate(boom_gate_t *boom_gate, char status)
+void setBoomGateStatus(boom_gate_t *boom_gate, char status)
 {
     boom_gate->status = status;
 }
 
 void setDefaults(shared_memory_t shm) {
+    
+    pthread_mutexattr_t mutexAttr;
+    pthread_condattr_t condAttr;
+    pthread_mutexattr_init(&mutexAttr);
+    pthread_condattr_init(&condAttr);
+    pthread_mutexattr_setpshared(&mutexAttr, PTHREAD_PROCESS_SHARED);
+    pthread_condattr_setpshared(&condAttr, PTHREAD_PROCESS_SHARED);
+
+
     for (int i = 0; i < ENTRANCES; i++) {
-        setBoomGate(&shm.data->entrance[i].boom_gate, 'C');
+        pthread_mutex_init(&shm.data->entrance[i].boom_gate.mutex, &mutexAttr);
+        pthread_cond_init(&shm.data->entrance[i].boom_gate.cond, &condAttr);
+        setBoomGateStatus(&shm.data->entrance[i].boom_gate, 'C');
     }
     for (int i = 0; i < EXITS; i++) {
-        setBoomGate(&shm.data->exit[i].boom_gate, 'C');
+        pthread_mutex_init(&shm.data->exit[i].boom_gate.mutex, NULL);
+        pthread_cond_init(&shm.data->exit[i].boom_gate.cond, NULL);
+        setBoomGateStatus(&shm.data->exit[i].boom_gate, 'C');
     }
 }
 
@@ -68,11 +81,11 @@ void open_boom_gate(boom_gate_t *boom_gate) {
         usleep(10000);
         pthread_mutex_lock(&boom_gate->mutex);
         boom_gate->status = 'O';
-        pthread_cond_signal(&boom_gate->cond);
+        pthread_cond_broadcast(&boom_gate->cond);
         printf("%c \n", boom_gate->status);
         pthread_mutex_unlock(&boom_gate->mutex);
     }
-    pthread_cond_signal(&boom_gate->cond);
+    pthread_cond_broadcast(&boom_gate->cond);
     pthread_mutex_unlock(&boom_gate->mutex);
 }
 
@@ -92,7 +105,7 @@ void close_boom_gate(boom_gate_t *boom_gate) {
     } else {
         pthread_mutex_unlock(&boom_gate->mutex);
     }
-    pthread_cond_signal(&boom_gate->cond);
+    pthread_cond_broadcast(&boom_gate->cond);
     pthread_mutex_unlock(&boom_gate->mutex);
 }
 
