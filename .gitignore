@@ -2,6 +2,8 @@
 .vscode
 testing
 
+!tasks.json
+
 # build files
 manager
 simulator
