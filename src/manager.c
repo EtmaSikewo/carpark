@@ -42,20 +42,46 @@ typedef struct level_manager
 
 levels_t levels[LEVELS];
 
+//create a function that sets the default value for boom gate
+void setBoomGateStatus(boom_gate_t *boom_gate, char status)
+{
+    boom_gate->status = status;
+}
+
+void setDefaults(shared_memory_t shm) {
+    
+    pthread_mutexattr_t mutexAttr;
+    pthread_condattr_t condAttr;
+    pthread_mutexattr_init(&mutexAttr);
+    pthread_condattr_init(&condAttr);
+    pthread_mutexattr_setpshared(&mutexAttr, PTHREAD_PROCESS_SHARED);
+    pthread_condattr_setpshared(&condAttr, PTHREAD_PROCESS_SHARED);
+
+
+    for (int i = 0; i < ENTRANCES; i++) {
+        pthread_mutex_init(&shm.data->entrance[i].boom_gate.mutex, &mutexAttr);
+        pthread_cond_init(&shm.data->entrance[i].boom_gate.cond, &condAttr);
+        setBoomGateStatus(&shm.data->entrance[i].boom_gate, 'C');
+    }
+    for (int i = 0; i < EXITS; i++) {
+        pthread_mutex_init(&shm.data->exit[i].boom_gate.mutex, NULL);
+        pthread_cond_init(&shm.data->exit[i].boom_gate.cond, NULL);
+        setBoomGateStatus(&shm.data->exit[i].boom_gate, 'C');
+    }
+}
+
 // A function that opens a boomgate with mutex
 void open_boom_gate(boom_gate_t *boom_gate) {
     pthread_mutex_lock(&boom_gate->mutex);
     if (boom_gate->status == 'C') {
+        printf("%c \n", boom_gate->status);
         boom_gate->status = 'R';
-        pthread_mutex_unlock(&boom_gate->mutex);
+        printf("%c \n", boom_gate->status);
         usleep(10000);
-        pthread_mutex_lock(&boom_gate->mutex);
         boom_gate->status = 'O';
-        pthread_mutex_unlock(&boom_gate->mutex);
-    } else {
-        pthread_mutex_unlock(&boom_gate->mutex);
+        printf("%c \n", boom_gate->status);
+        pthread_cond_broadcast(&boom_gate->cond);
     }
-    pthread_cond_signal(&boom_gate->cond);
     pthread_mutex_unlock(&boom_gate->mutex);
 }
 
@@ -63,16 +89,14 @@ void open_boom_gate(boom_gate_t *boom_gate) {
 void close_boom_gate(boom_gate_t *boom_gate) {
     pthread_mutex_lock(&boom_gate->mutex);
     if (boom_gate->status == 'O') {
+        printf("%c \n", boom_gate->status);
         boom_gate->status = 'L';
-        pthread_mutex_unlock(&boom_gate->mutex);
+        printf("%c \n", boom_gate->status);
         usleep(10000);
-        pthread_mutex_lock(&boom_gate->mutex);
         boom_gate->status = 'C';
-        pthread_mutex_unlock(&boom_gate->mutex);
-    } else {
-        pthread_mutex_unlock(&boom_gate->mutex);
+        printf("%c \n", boom_gate->status);
     }
-    pthread_cond_signal(&boom_gate->cond);
+    pthread_cond_broadcast(&boom_gate->cond);
     pthread_mutex_unlock(&boom_gate->mutex);
 }
 
@@ -82,9 +106,19 @@ int main(void)
     // //  read in from the shared memory pool
     // memoryAccess();
 
-    open_boom_gate(&shared_memory->entrance[0].boom_gate);
+    shared_memory_t shm;
 
-    someFunc(currLevelCapacity);
+    create_shared_object(&shm, "PARKING");
+    setDefaults(shm);
+    for (;;) {
+        open_boom_gate(&shm.data->entrance[0].boom_gate);
+        usleep(1000000);
+        close_boom_gate(&shm.data->entrance[0].boom_gate);
+        usleep(1000000);
+    }
+    //open_boom_gate(&shm.data->entrance[0].boom_gate);
+    //close_boom_gate(&shm.data->entrance[0].boom_gate);
+
 
     return 0;
 }

@@ -13,11 +13,25 @@ typedef struct carcar
 } carcar_t;
 
 //  main function to create PARKING mem segment
-int createMemSegment(int argc, char **argv)
+int main(int argc, char **argv)
 {
     //  create the shared memory segment
     shared_memory_t shm;
-    create_shared_object(&shm, "PARKING");
+    get_shared_object(&shm, "PARKING");
+
+
+    
+    // print status of entrance boom gate
+    printf("Entrance boom gate status: %c\n", shm.data->entrance[0].boom_gate.status);
+
+    
+
+    for(;;) {
+        pthread_cond_wait(&shm.data->entrance[0].boom_gate.cond, &shm.data->entrance[0].boom_gate.mutex);
+         // print status of entrance boom gate
+        printf("Entrance boom gate status: %c\n", shm.data->entrance[0].boom_gate.status);
+    }
+    
 
     return 0;
 }

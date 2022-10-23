@@ -1,6 +1,6 @@
 #Makefile for carpark assignment
 CC = gcc
-CFLAGS = -Wall -Werror -pedantic -pthread
+CFLAGS = -Wall -Werror -pedantic -pthread -ltr
 
 all: carpark	
 	 echo "Done."
