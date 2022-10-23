@@ -42,15 +42,33 @@ typedef struct level_manager
 
 levels_t levels[LEVELS];
 
+//create a function that sets the default value for boom gate
+void setBoomGate(boom_gate_t *boom_gate, char status)
+{
+    boom_gate->status = status;
+}
+
+void setDefaults(shared_memory_t shm) {
+    for (int i = 0; i < ENTRANCES; i++) {
+        setBoomGate(&shm.data->entrance[i].boom_gate, 'C');
+    }
+    for (int i = 0; i < EXITS; i++) {
+        setBoomGate(&shm.data->exit[i].boom_gate, 'C');
+    }
+}
+
 // A function that opens a boomgate with mutex
 void open_boom_gate(boom_gate_t *boom_gate) {
     pthread_mutex_lock(&boom_gate->mutex);
     if (boom_gate->status == 'C') {
+        printf("%c \n", boom_gate->status);
         boom_gate->status = 'R';
+        printf("%c \n", boom_gate->status);
         pthread_mutex_unlock(&boom_gate->mutex);
         usleep(10000);
         pthread_mutex_lock(&boom_gate->mutex);
         boom_gate->status = 'O';
+        printf("%c \n", boom_gate->status);
         pthread_mutex_unlock(&boom_gate->mutex);
     } else {
         pthread_mutex_unlock(&boom_gate->mutex);
@@ -63,11 +81,14 @@ void open_boom_gate(boom_gate_t *boom_gate) {
 void close_boom_gate(boom_gate_t *boom_gate) {
     pthread_mutex_lock(&boom_gate->mutex);
     if (boom_gate->status == 'O') {
+        printf("%c \n", boom_gate->status);
         boom_gate->status = 'L';
+        printf("%c \n", boom_gate->status);
         pthread_mutex_unlock(&boom_gate->mutex);
         usleep(10000);
         pthread_mutex_lock(&boom_gate->mutex);
         boom_gate->status = 'C';
+        printf("%c \n", boom_gate->status);
         pthread_mutex_unlock(&boom_gate->mutex);
     } else {
         pthread_mutex_unlock(&boom_gate->mutex);
@@ -82,9 +103,13 @@ int main(void)
     // //  read in from the shared memory pool
     // memoryAccess();
 
-    open_boom_gate(&shared_memory->entrance[0].boom_gate);
+    shared_memory_t shm;
 
-    someFunc(currLevelCapacity);
+    create_shared_object(&shm, "pog");
+    setDefaults(shm);
+    open_boom_gate(&shm.data->entrance[0].boom_gate);
+    close_boom_gate(&shm.data->entrance[0].boom_gate);
+
 
     return 0;
 }
