@@ -1,4 +1,4 @@
-// #include <stdio.h>
+#include <stdio.h>
 // #include <stdlib.h>
 // #include <time.h>
 // #include <pthread.h>
@@ -6,41 +6,25 @@
 // #include <sys/types.h>
 // #include <unistd.h>
 // #include <fcntl.h>
-
-// #include "shared_mem_access.h"
-
-// //  !!TODO basic functions for things
-
-// int main(int argc, char** argv)
-// {
-//     memoryAccess();
-//     return 0;
-// }
-
-// // function for sending the command to open a boom gate
-// void openGate(int gateID, unsigned char state)
-// {
-//     //
-// }
-
-#include <stdio.h>
 #include "mem_init.h"
 
-int currLevelCapacity[LEVELS];
+#define MS_IN_MICROSECONDS 1000
 
-typedef struct car_manager
-{
-    char plate[6];   //  default value is "000000"
-    int timeEntered; //  between 100-10000ms
-} car_manager_t;
+// int currLevelCapacity[LEVELS];
 
-typedef struct level_manager
-{
-    int currLevelCapacity;
-    car_manager_t car_manager[PARKING_CAPACITY];
-} levels_t;
+//  structs for car and level managers
+// typedef struct car_manager
+// {
+//     char plate[6];   //  default value is "000000"
+//     int timeEntered; //  between 100-10000ms
+// } car_manager_t;
+// typedef struct level_manager
+// {
+//     int currLevelCapacity;
+//     car_manager_t car_manager[PARKING_CAPACITY];
+// } levels_t;
 
-levels_t levels[LEVELS];
+// levels_t levels[LEVELS];
 
 //create a function that sets the default value for boom gate
 void setBoomGateStatus(boom_gate_t *boom_gate, char status)
@@ -50,7 +34,7 @@ void setBoomGateStatus(boom_gate_t *boom_gate, char status)
 
 void setDefaults(shared_memory_t shm) {
     
-    pthread_mutexattr_t mutexAttr;
+    pthread_mutexattr_t mutexAttr;  //  !!TODO can return an error number if unsuccessful https://www.ibm.com/docs/en/zos/2.3.0?topic=functions-pthread-mutexattr-init-initialize-mutex-attribute-object
     pthread_condattr_t condAttr;
     pthread_mutexattr_init(&mutexAttr);
     pthread_condattr_init(&condAttr);
@@ -77,7 +61,7 @@ void open_boom_gate(boom_gate_t *boom_gate) {
         printf("%c \n", boom_gate->status);
         boom_gate->status = 'R';
         printf("%c \n", boom_gate->status);
-        usleep(10000);
+        usleep(10 * MS_IN_MICROSECONDS);
         boom_gate->status = 'O';
         printf("%c \n", boom_gate->status);
         pthread_cond_broadcast(&boom_gate->cond);
@@ -92,33 +76,32 @@ void close_boom_gate(boom_gate_t *boom_gate) {
         printf("%c \n", boom_gate->status);
         boom_gate->status = 'L';
         printf("%c \n", boom_gate->status);
-        usleep(10000);
+        usleep(10 * MS_IN_MICROSECONDS);
         boom_gate->status = 'C';
         printf("%c \n", boom_gate->status);
+        pthread_cond_broadcast(&boom_gate->cond);
     }
-    pthread_cond_broadcast(&boom_gate->cond);
     pthread_mutex_unlock(&boom_gate->mutex);
 }
 
 int main(void)
 {
-    // printf("%s:%s:%d \n", __FILE__, __FUNCTION__, __LINE__);
+    // !!TODO move this to simulator.c
+    //  start the shared memory
+    shared_memory_t shm;
+    create_shared_object(&shm, "PARKING");
+    setDefaults(shm);
+    
     // //  read in from the shared memory pool
     // memoryAccess();
 
-    shared_memory_t shm;
-
-    create_shared_object(&shm, "PARKING");
-    setDefaults(shm);
+    //  open and close boom gate every second
     for (;;) {
         open_boom_gate(&shm.data->entrance[0].boom_gate);
-        usleep(1000000);
+        usleep(1000 * MS_IN_MICROSECONDS);
         close_boom_gate(&shm.data->entrance[0].boom_gate);
-        usleep(1000000);
+        usleep(1000 * MS_IN_MICROSECONDS);
     }
-    //open_boom_gate(&shm.data->entrance[0].boom_gate);
-    //close_boom_gate(&shm.data->entrance[0].boom_gate);
-
 
     return 0;
 }

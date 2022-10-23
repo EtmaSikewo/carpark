@@ -1,35 +1,6 @@
-# custom ingores
-.vscode
-testing
-
-!tasks.json
-
-# build files
-manager
-simulator
-
-# test files for creating/accessing memory
-shm_server*
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ##########################################
 # default ignores
-
+##########################################
 
 # Prerequisites
 *.d
@@ -84,3 +55,21 @@ Module.symvers
 Mkfile.old
 dkms.conf
 src/shared_mem_create.c
+
+##########################################
+# custom ingores
+##########################################
+.vscode/*
+testing
+
+
+# build files
+manager
+simulator
+firealarm
+
+
+##########################################
+# don't ignore these files
+##########################################
+!.vscode/tasks.json
