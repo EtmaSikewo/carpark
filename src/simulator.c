@@ -17,19 +17,19 @@ int main(int argc, char **argv)
 {
     //  create the shared memory segment
     shared_memory_t shm;
-    get_shared_object(&shm, "pog");
+    get_shared_object(&shm, "PARKING");
 
 
     
     // print status of entrance boom gate
-    printf("Entrance boom gate status: %d\n", shm.data->entrance[0].boom_gate.status);
+    printf("Entrance boom gate status: %c\n", shm.data->entrance[0].boom_gate.status);
 
     
 
     for(;;) {
         pthread_cond_wait(&shm.data->entrance[0].boom_gate.cond, &shm.data->entrance[0].boom_gate.mutex);
          // print status of entrance boom gate
-        printf("Entrance boom gate status: %d\n", shm.data->entrance[0].boom_gate.status);
+        printf("Entrance boom gate status: %c\n", shm.data->entrance[0].boom_gate.status);
     }
     
 
