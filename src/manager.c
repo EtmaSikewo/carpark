@@ -77,15 +77,11 @@ void open_boom_gate(boom_gate_t *boom_gate) {
         printf("%c \n", boom_gate->status);
         boom_gate->status = 'R';
         printf("%c \n", boom_gate->status);
-        pthread_mutex_unlock(&boom_gate->mutex);
         usleep(10000);
-        pthread_mutex_lock(&boom_gate->mutex);
         boom_gate->status = 'O';
-        pthread_cond_broadcast(&boom_gate->cond);
         printf("%c \n", boom_gate->status);
-        pthread_mutex_unlock(&boom_gate->mutex);
+        pthread_cond_broadcast(&boom_gate->cond);
     }
-    pthread_cond_broadcast(&boom_gate->cond);
     pthread_mutex_unlock(&boom_gate->mutex);
 }
 
@@ -96,14 +92,9 @@ void close_boom_gate(boom_gate_t *boom_gate) {
         printf("%c \n", boom_gate->status);
         boom_gate->status = 'L';
         printf("%c \n", boom_gate->status);
-        pthread_mutex_unlock(&boom_gate->mutex);
         usleep(10000);
-        pthread_mutex_lock(&boom_gate->mutex);
         boom_gate->status = 'C';
         printf("%c \n", boom_gate->status);
-        pthread_mutex_unlock(&boom_gate->mutex);
-    } else {
-        pthread_mutex_unlock(&boom_gate->mutex);
     }
     pthread_cond_broadcast(&boom_gate->cond);
     pthread_mutex_unlock(&boom_gate->mutex);
@@ -117,10 +108,11 @@ int main(void)
 
     shared_memory_t shm;
 
-    create_shared_object(&shm, "pog");
+    create_shared_object(&shm, "PARKING");
     setDefaults(shm);
     for (;;) {
         open_boom_gate(&shm.data->entrance[0].boom_gate);
+        usleep(1000000);
         close_boom_gate(&shm.data->entrance[0].boom_gate);
         usleep(1000000);
     }
