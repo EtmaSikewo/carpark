@@ -80,6 +80,8 @@ typedef struct shared_memory
     shared_memory_data_t *data;
 } shared_memory_t;
 
+// below functions derived from AMS tasks
+
 bool create_shared_object(shared_memory_t *shared_mem_obj, const char *shared_mem_name)
 {
 
@@ -106,7 +108,6 @@ bool create_shared_object(shared_memory_t *shared_mem_obj, const char *shared_me
     }
     shared_mem_obj->data = (shared_memory_data_t *)sd;
 
-    // If we reach this point we should return true.
     return true;
 }
 
@@ -119,4 +120,22 @@ void destroy_shared_object(shared_memory_t *shared_mem_obj)
         shared_mem_obj->fd = -1;
         shared_mem_obj->data = NULL;
     }
+}
+
+bool get_shared_object(shared_memory_t *shared_mem_obj, const char *shared_mem_name)
+{
+    if ((shared_mem_obj->fd = shm_open(shared_mem_name, O_RDWR, 0666)) < 0)
+    {
+        shared_mem_obj->data = NULL;
+        return false;
+    }
+
+    char *sd;
+    if ((sd = mmap(0, sizeof(shared_memory_data_t), PROT_WRITE | PROT_READ, MAP_SHARED, shared_mem_obj->fd, 0)) == (char *)-1)
+    {
+        shared_mem_obj->data = MAP_FAILED;
+        return false;
+    }
+    shared_mem_obj->data = (shared_memory_data_t *)sd;
+    return true;
 }
