@@ -28,7 +28,16 @@ int main(void)
 {
     //  create the shared memory segment
     shared_memory_t shm;
-    get_shared_object(&shm, "PARKING");
+    get_shared_object(&shm, "PARKING"); // Need to error handle this
+
+    for(;;) {
+        for (int i = 0; i < ENTRANCES; i++) {
+            pthread_cond_signal(&shm.data->entrance[i].boom_gate.cond);
+            pthread_cond_wait(&shm.data->entrance[i].boom_gate.cond, &shm.data->entrance[i].boom_gate.mutex);
+            //this is when the car will drive through the boom gate
+            printf("car has entered the parking lot\n");
+        }
+    }
 
     return 0;
 }
