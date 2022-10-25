@@ -1,4 +1,9 @@
 #include <stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <math.h>
 #include "mem_init.h"
 
 #define MS_IN_MICROSECONDS 1000
@@ -13,6 +18,51 @@ typedef struct carcar
     char assignedLevel; //  the level the car is assigned to
     int parkDuration;   //  between 100-10000ms
 } carcar_t;
+
+char *getPlate() {
+    char *plate = malloc(8);
+    
+    // Having issues with this, need to look into it more
+
+    // Generate a random license plate if the plate is invalid
+    // the random plate will have three numbers and three letters
+    // erase plate
+    memset(plate, 0, 8);
+    // Generate 3 random numbers and 3 random letters
+    int j = 0;
+    for (j = 0; j < 3; j++) {
+        plate[j] = rand() % 10 + '0';
+    }
+    for (j = 3; j < 6; j++) {
+        plate[j] = rand() % 26 + 'A';
+    }
+    plate[6] = '\0';
+
+    return plate;
+}
+
+void generateCar(carcar_t *car) {
+    // Generate a random license plate
+    char *plate = getPlate();
+    strcpy(car->plate, plate);
+    free(plate);
+
+    // Generate a random entry gate
+    car->entryGate = rand() % ENTRANCES;
+
+    // Generate a random exit gate
+    car->exitGate = rand() % EXITS;
+
+    // Generate a random park duration
+    car->parkDuration = rand() % 10000 + 100;
+}
+
+void lprFunction(carcar_t *car) {
+    char queuePlates[5];
+
+
+
+}
 
 //A set of functions that sets the default value for all boom gates
 void bgFunction(void * bg)
@@ -59,15 +109,27 @@ void setDefaults(shared_memory_t shm) {
         pthread_mutex_init(&shm.data->entrance[i].boom_gate.mutex, &mutexAttr);
         pthread_cond_init(&shm.data->entrance[i].boom_gate.cond, &condAttr);
         setBoomGateStatus(&shm.data->entrance[i].boom_gate, 'C');
+
+        // create a thread for each boom gate
         pthread_t boomgateThread;
         pthread_create(&boomgateThread, &pthreadAttr, (void *)bgFunction, &shm.data->entrance[i].boom_gate);
+
+        // create a thread for each lpr
+        pthread_t lprThread;
+        pthread_create(&lprThread, &pthreadAttr, (void *)lprFunction, &shm.data->entrance[i].lpr_sensor);
     }
     for (int i = 0; i < EXITS; i++) {
         pthread_mutex_init(&shm.data->exit[i].boom_gate.mutex, NULL);
         pthread_cond_init(&shm.data->exit[i].boom_gate.cond, NULL);
         setBoomGateStatus(&shm.data->exit[i].boom_gate, 'C');
+
+        // create a thread for each boom gate
         pthread_t boomgateThread;
         pthread_create(&boomgateThread, &pthreadAttr, (void *)bgFunction, &shm.data->exit[i].boom_gate);
+
+        // create a thread for each lpr
+        pthread_t lprThread;
+        pthread_create(&lprThread, &pthreadAttr, (void *)lprFunction, &shm.data->exit[i].lpr_sensor);
     }
 }
 
@@ -79,9 +141,20 @@ int main(int argc, char **argv)
     create_shared_object(&shm, "PARKING");
     setDefaults(shm);
 
-    for(;;) {
-        //do nothing
+    for(int i = 0; i < 1; i++) {
+        //  generate a car
+        carcar_t car;
+        generateCar(&car);
+        printf("Car %s has entered the parking lot at gate %d\n", car.plate, car.entryGate);
+        pthread_cond_signal(&shm.data->entrance[car.entryGate].lpr_sensor.cond);
+        pthread_cond_wait(&shm.data->entrance[car.entryGate].lpr_sensor.cond, &shm.data->entrance[car.entryGate].lpr_sensor.mutex);
     }
+
+    for(;;) {
+
+    }
+
+    
 
     return 0;
 }
