@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "mem_init.h"
 
+#define MS_IN_MICROSECONDS 1000
+
 //  !!TODO rename this struct
 typedef struct carcar
 {
@@ -12,7 +14,7 @@ typedef struct carcar
     int parkDuration;   //  between 100-10000ms
 } carcar_t;
 
-//create a function that sets the default value for boom gate
+//A set of functions that sets the default value for all boom gates
 void setBoomGateStatus(boom_gate_t *boom_gate, char status)
 {
     boom_gate->status = status;
@@ -40,6 +42,36 @@ void setDefaults(shared_memory_t shm) {
     }
 }
 
+// A function that opens a boomgate with mutex
+void open_boom_gate(boom_gate_t *boom_gate) {
+    pthread_mutex_lock(&boom_gate->mutex);
+    if (boom_gate->status == 'C') {
+        printf("%c \n", boom_gate->status);
+        boom_gate->status = 'R';
+        printf("%c \n", boom_gate->status);
+        usleep(10 * MS_IN_MICROSECONDS);
+        boom_gate->status = 'O';
+        printf("%c \n", boom_gate->status);
+        pthread_cond_broadcast(&boom_gate->cond);
+    }
+    pthread_mutex_unlock(&boom_gate->mutex);
+}
+
+// A function that closes a boomgate with mutex
+void close_boom_gate(boom_gate_t *boom_gate) {
+    pthread_mutex_lock(&boom_gate->mutex);
+    if (boom_gate->status == 'O') {
+        printf("%c \n", boom_gate->status);
+        boom_gate->status = 'L';
+        printf("%c \n", boom_gate->status);
+        usleep(10 * MS_IN_MICROSECONDS);
+        boom_gate->status = 'C';
+        printf("%c \n", boom_gate->status);
+        pthread_cond_broadcast(&boom_gate->cond);
+    }
+    pthread_mutex_unlock(&boom_gate->mutex);
+}
+
 //  main function to create PARKING mem segment
 int main(int argc, char **argv)
 {
@@ -47,14 +79,22 @@ int main(int argc, char **argv)
     shared_memory_t shm;
     create_shared_object(&shm, "PARKING");
     setDefaults(shm);
+
+    //  open and close boom gate every second
+    for (;;) {
+        open_boom_gate(&shm.data->entrance[0].boom_gate);
+        usleep(1000 * MS_IN_MICROSECONDS);
+        close_boom_gate(&shm.data->entrance[0].boom_gate);
+        usleep(1000 * MS_IN_MICROSECONDS);
+    }
     
     for(;;) {
         pthread_cond_wait(&shm.data->entrance[0].boom_gate.cond, &shm.data->entrance[0].boom_gate.mutex);
          // print status of entrance boom gate
         printf("Entrance boom gate status: %c\n", shm.data->entrance[0].boom_gate.status);
     }
+
+    
     
     return 0;
 }
-
-// FUTURE ME: was last using the functions to create teh shared mem
