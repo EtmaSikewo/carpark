@@ -26,34 +26,6 @@
 
 // levels_t levels[LEVELS];
 
-//create a function that sets the default value for boom gate
-void setBoomGateStatus(boom_gate_t *boom_gate, char status)
-{
-    boom_gate->status = status;
-}
-
-void setDefaults(shared_memory_t shm) {
-    
-    pthread_mutexattr_t mutexAttr;  //  !!TODO can return an error number if unsuccessful https://www.ibm.com/docs/en/zos/2.3.0?topic=functions-pthread-mutexattr-init-initialize-mutex-attribute-object
-    pthread_condattr_t condAttr;
-    pthread_mutexattr_init(&mutexAttr);
-    pthread_condattr_init(&condAttr);
-    pthread_mutexattr_setpshared(&mutexAttr, PTHREAD_PROCESS_SHARED);
-    pthread_condattr_setpshared(&condAttr, PTHREAD_PROCESS_SHARED);
-
-
-    for (int i = 0; i < ENTRANCES; i++) {
-        pthread_mutex_init(&shm.data->entrance[i].boom_gate.mutex, &mutexAttr);
-        pthread_cond_init(&shm.data->entrance[i].boom_gate.cond, &condAttr);
-        setBoomGateStatus(&shm.data->entrance[i].boom_gate, 'C');
-    }
-    for (int i = 0; i < EXITS; i++) {
-        pthread_mutex_init(&shm.data->exit[i].boom_gate.mutex, NULL);
-        pthread_cond_init(&shm.data->exit[i].boom_gate.cond, NULL);
-        setBoomGateStatus(&shm.data->exit[i].boom_gate, 'C');
-    }
-}
-
 // A function that opens a boomgate with mutex
 void open_boom_gate(boom_gate_t *boom_gate) {
     pthread_mutex_lock(&boom_gate->mutex);
@@ -86,14 +58,9 @@ void close_boom_gate(boom_gate_t *boom_gate) {
 
 int main(void)
 {
-    // !!TODO move this to simulator.c
-    //  start the shared memory
+    //  create the shared memory segment
     shared_memory_t shm;
-    create_shared_object(&shm, "PARKING");
-    setDefaults(shm);
-    
-    // //  read in from the shared memory pool
-    // memoryAccess();
+    get_shared_object(&shm, "PARKING");
 
     //  open and close boom gate every second
     for (;;) {
