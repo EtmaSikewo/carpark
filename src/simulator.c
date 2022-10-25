@@ -20,24 +20,50 @@ typedef struct carcar
 } carcar_t;
 
 char *getPlate() {
-    char *plate = malloc(8);
-    
-    // Having issues with this, need to look into it more
 
-    // Generate a random license plate if the plate is invalid
-    // the random plate will have three numbers and three letters
-    // erase plate
-    memset(plate, 0, 8);
-    // Generate 3 random numbers and 3 random letters
-    int j = 0;
-    for (j = 0; j < 3; j++) {
-        plate[j] = rand() % 10 + '0';
-    }
-    for (j = 3; j < 6; j++) {
-        plate[j] = rand() % 26 + 'A';
-    }
-    plate[6] = '\0';
+    // Either generate a random plate or read from a file
+    FILE *plateFile = fopen("plates.txt", "r");
+    char *plate = malloc(6);
 
+    // // Find how many lines in the file
+    // int lines = 0;
+    // char c;
+    // for (c = getc(plateFile); c != EOF; c = getc(plateFile)) {
+    //     if (c == '\n') {
+    //         lines++;
+    //     }
+    // }
+    //Read a random line from the file using file length 
+    int lineNum = rand() % 100;
+    // printf("lineNum: %d\n", lineNum);
+    // go to a random line in the file
+    rewind(plateFile);
+    for(int i = 0; i < lineNum; i++){
+        fgets(plate, sizeof(plate), plateFile);
+    }
+
+    // printf("plate: %s\n", plate);
+    // Roll a 50/50 chance to generate a random plate
+    if (rand() % 2) {
+        // printf("Generating random plate");
+        // erase plate
+        memset(plate, 0, 6);
+        int j = 0;
+        for (j = 0; j < 3; j++)
+        {
+            plate[j] = rand() % 10 + '0';
+        }
+        for (j = 3; j < 6; j++)
+        {
+            plate[j] = rand() % 26 + 'A';
+        }
+        plate[6] = '\0';
+    }
+
+    //Close the file
+    fclose(plateFile);
+
+    //Return plate
     return plate;
 }
 
@@ -57,8 +83,62 @@ void generateCar(carcar_t *car) {
     car->parkDuration = rand() % 10000 + 100;
 }
 
+//------------------------------------------------------------
+//BOILER PLATE STUFF FOR LATER
+//------------------------------------------------------------
+// Thread for the car
+void *carThread(void *arg)
+{
+    // carcar_t *car = (carcar_t *)arg;
+
+    //Grab all the data of the car
+    // char *plate = car->plate;
+    // int entryGate = car->entryGate;
+    // int exitGate = car->exitGate;
+    // int parkDuration = car->parkDuration;
+
+    // Add the car to the queue
+    // addCarToQueue(car);
+
+    // Wait for the info to enter
+
+    for(;;){
+        // If (car is rejected)
+        // {
+        //     // Car leaves
+        //     // Car is removed from queue
+        // }
+
+        // else if (car is accepted)
+        // {
+            //Car is accepted 
+            // break
+        //}
+
+
+    }
+
+    // Car waits for 10ms then enters
+    // usleep(10 * MS_IN_MICROSECONDS);
+    // Head to level and trigger LPR
+    // Park 
+
+    //Car parks and waits for duration 
+    // usleep(parkDuration * MS_IN_MICROSECONDS);
+
+    //Exits 
+    // Head to exit and trigger LPR
+    // wait for exit gate to open
+    // for (;;)
+    // { Wait to exit
+    // }
+    // done
+}
+
+
 void lprFunction(carcar_t *car) {
-    char queuePlates[5];
+    //char queuePlates[5];
+    return;
 
 
 
@@ -136,6 +216,9 @@ void setDefaults(shared_memory_t shm) {
 //  main function to create PARKING mem segment
 int main(int argc, char **argv)
 {
+
+    //Set the seed of the random number generator
+    srand(time(0));
     //  start the shared memory
     shared_memory_t shm;
     create_shared_object(&shm, "PARKING");
@@ -151,6 +234,10 @@ int main(int argc, char **argv)
     }
 
     for(;;) {
+        // Run getPlate
+        char *plate = getPlate();
+        printf("Plate: %s\n", plate);
+        //printf("Looping...\n");
 
     }
 

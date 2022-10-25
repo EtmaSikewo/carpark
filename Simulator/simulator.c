@@ -160,8 +160,6 @@ char *getPlate() {
             lines++;
         }
     }
-    // display the number of lines
-    printf("Number of lines = %d\n", lines);
     // Pick a random line
     int line = rand() % lines;
     printf("Random line = %d\n", line);
