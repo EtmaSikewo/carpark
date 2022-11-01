@@ -1,5 +1,5 @@
 #include <stdio.h>
-// #include <stdlib.h>
+#include<stdlib.h>
 // #include <time.h>
 // #include <pthread.h>
 // #include <sys/mman.h>
@@ -7,6 +7,8 @@
 // #include <unistd.h>
 // #include <fcntl.h>
 #include "mem_init.h"
+
+#define MS_IN_MICROSECONDS 1000
 
 // int currLevelCapacity[LEVELS];
 
@@ -29,15 +31,116 @@ int main(void)
     //  create the shared memory segment
     shared_memory_t shm;
     get_shared_object(&shm, "PARKING"); // Need to error handle this
+    
+    // try to get shared memory object parking
+    
 
-    for(;;) {
-        for (int i = 0; i < ENTRANCES; i++) {
-            pthread_cond_signal(&shm.data->entrance[i].boom_gate.cond);
-            pthread_cond_wait(&shm.data->entrance[i].boom_gate.cond, &shm.data->entrance[i].boom_gate.mutex);
-            //this is when the car will drive through the boom gate
-            printf("car has entered the parking lot\n");
-        }
+    // for(;;) {
+    //     for (int i = 0; i < ENTRANCES; i++) {
+    //         pthread_cond_signal(&shm.data->entrance[i].boom_gate.cond);
+    //         pthread_cond_wait(&shm.data->entrance[i].boom_gate.cond, &shm.data->entrance[i].boom_gate.mutex);
+    //         //this is when the car will drive through the boom gate
+    //         printf("car has entered the parking lot\n");
+    //     }
+    // }
+
+
+
+
+
+
+
+// ---------------------------------------------
+// Template for the manager UI 
+// ---------------------------------------------
+
+/*
+Status of the boom gates
+Entrances           Exits
+1: C                1: C
+2: C                2: C
+3.C                 3: C
+4: C                4: C
+5: C                5: C
+
+Status of the LPR sensors
+Entrances           Exits           Level
+1: 
+2:
+3:
+4:
+5:
+
+Status of the information signs 
+1:  2:  3:  4:  5:
+
+Level information 
+level 1: 0/100
+level 2: 0/100
+level 3: 0/100
+level 4: 0/100
+level 5: 0/100
+*/
+
+
+    // Set all boom gates to raise
+    for (int i = 0; i < ENTRANCES; i++) {
+        shm.data->entrance[i].boom_gate.status = 'R';
     }
 
-    return 0;
+    for(;;){
+        //Clear the console each loop
+        system("clear");
+        //Print the status of the boom gates
+        printf("Status of the boom gates\n");
+        printf("Entrances           Exits\n");
+        for(int i = 0; i < ENTRANCES; i++){
+            printf("%d: %c                %d: %c\n", i+1, shm.data->entrance[i].boom_gate.status, i+1, shm.data->exit[i].boom_gate.status);
+        }
+        // printf("\n");
+        // //Print the status of the LPR sensors
+        // printf("Status of the LPR sensors\n");
+        // printf("Entrances           Exits           Level\n");
+        // for(int i = 0; i < ENTRANCES; i++){
+        //     printf("%d: %c                %d: %c                %d: %c\n", i+1, shm.data->entrance[i].lpr_sensor.status, i+1, shm.data->exit[i].lpr_sensor.status, i+1, shm.data->level[i].lpr_sensor.status);
+        // }
+        // printf("\n");
+        // //Print the status of the information signs
+        // printf("Status of the information signs\n");
+        // for(int i = 0; i < ENTRANCES; i++){
+        //     printf("%d: %c  ", i+1, shm.data->entrance[i].info_sign.status);
+        // }
+        // printf("\n");
+        // //Print the level information
+        // printf("Level information\n");
+        // for(int i = 0; i < LEVELS; i++){
+        //     printf("level %d: %d/%d\n", i+1, shm.data->level[i].currLevelCapacity, PARKING_CAPACITY);
+        // }
+        printf("\n");
+        usleep(10 * MS_IN_MICROSECONDS);
+
+        // Randomly change the status of the boom gates
+        // for(int i = 0; i < ENTRANCES; i++){
+        //     if(rand() % 500 == 0){
+        //         if(rand() % 200 == 0){
+        //             shm.data->entrance[i].boom_gate.status = 'R';
+        //         } else {
+        //             shm.data->entrance[i].boom_gate.status = 'L';
+        //         }
+        //     }   
+        //     if(rand()% 500 == 0) {
+        //         if(rand() % 200 == 0){
+        //             shm.data->exit[i].boom_gate.status = 'R';
+        //         } else {
+        //             shm.data->exit[i].boom_gate.status = 'L';
+        //         }
+        //     }
+        // }
+
+    }
+
+
 }
+
+
+

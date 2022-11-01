@@ -102,7 +102,7 @@ void *carThread(void *arg)
 
     // Wait for the info to enter
 
-    for(;;){
+    //for(;;){
         // If (car is rejected)
         // {
         //     // Car leaves
@@ -116,7 +116,7 @@ void *carThread(void *arg)
         //}
 
 
-    }
+    //}
 
     // Car waits for 10ms then enters
     // usleep(10 * MS_IN_MICROSECONDS);
@@ -216,6 +216,10 @@ void setDefaults(shared_memory_t shm) {
 //  main function to create PARKING mem segment
 int main(int argc, char **argv)
 {
+
+    // Simualtor welcome message
+    printf("Welcome to the Parking Simulator\n");
+
 
     //Set the seed of the random number generator
     srand(time(0));
