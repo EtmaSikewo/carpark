@@ -10,6 +10,12 @@
 // ---------------------------------------------
 // Definitions 
 #define MS_IN_MICROSECONDS 1000
+#define QueueSize 100
+
+// variables for car queue
+pthread_mutex_t queueEntry;
+pthread_mutex_t queueExit;
+int carLevelCount[LEVELS] = {0};
 
 
 // ---------------------------------------------
@@ -29,7 +35,43 @@ int randThread(void){
 
 // Random generator for picking a carpark level
 // ---------------------------------------------
+int randLevel(void){
+    int randomLevel;
+    randomLevel = randThread() % LEVELS;
+    if (carLevelCount[randomLevel] < QueueSize){
+        return randomLevel;
+    }
+    else{
+        //Loop through the levels to find a level with space
+        for (int i = 0; i < LEVELS; i++){
+            if (carLevelCount[i] < QueueSize){
+                return i;
+            }
+        }
+    }
+    return -1;
+}
 
+//---------------------------------------------
+// Methods in charge of the car queue
+//---------------------------------------------
+// Method to add a car to the queue
+
+
+//---------------------------------------------
+// Methods for the LPR sensor
+//---------------------------------------------
+// Initialise the LPR sensor
+void *initLPR(void *arg)
+{
+	lpr_sensor_t *lpr = arg;
+
+    // check if failed 
+    if (pthread_mutex_init(&lpr->mutex, NULL) != 0) {
+        printf("LPR mutex init failed");
+    }
+    return NULL;
+}
 
 
 // ---------------------------------------------
@@ -103,10 +145,8 @@ void boomGateSimualtor(void *arg){
         printf("Boom gate is in an illegal state");
     }
     // Unlock the boom gate mutex
-    pthread_mutex_unlock(&boom_gate->mutex);
     printf("\n");
-    // sleep for a bit
-    usleep(5000 * MS_IN_MICROSECONDS);
+    pthread_mutex_unlock(&boom_gate->mutex);
 
 }
 
@@ -134,6 +174,64 @@ char *getPlate(){
     fclose(fp);
     return plate;
 }
+
+// TERRIBLE CAR GENERATOR FOR NOW!
+// ---------------------------------------------
+void *carThread(void *shmCar){
+
+    shared_memory_data_t *shm = shmCar;
+    
+    // Grab a random license plate
+    char *plate = getPlate();
+    char LicensePlate[6];
+    strcpy(LicensePlate, plate);
+    free(plate);
+    // Grab a random level 
+    int level = randLevel();
+
+    // print car details
+    printf("%s has arrived at entrance %d\n", LicensePlate, level+1);
+    // Lock the mutex for the LPR 
+    //pthread_mutex_lock(&shm.data->lpr[level].mutex);
+    //AHHHHHHHHHH
+
+    // Access the levels LPR sensor
+    lpr_sensor_t *lpr = &shm->entrance[level].lpr_sensor;
+
+    memcpy(lpr->plate, LicensePlate, sizeof(LicensePlate));
+
+    //memcpy(lpr->plate, LicensePlate, 6);
+    //pthread_mutex_unlock(&shm.data->lpr[level].mutex);
+    
+
+
+
+
+
+    return NULL;
+
+    
+}
+
+// Generate a car every 1-100ms 
+void *generateCar(void *shm ){
+    printf("Generating cars\n");
+    int maximumCars = 1000;
+    pthread_t cars[maximumCars];
+    for (int i = 0; i < maximumCars; i++){
+        pthread_create(&cars[i], NULL, carThread, shm);
+        int time = (randThread() % (100 - 1 + 1)) + 1; // create random wait time between 1-100ms
+        
+        int TestingMultiplier = 100;
+        
+        usleep(time*MS_IN_MICROSECONDS * TestingMultiplier);
+    }
+
+    return NULL;
+    
+}
+
+
 
 // ---------------------------------------------
 // Set defaults 
@@ -167,31 +265,26 @@ void setDefaults(shared_memory_t shm) {
         pthread_create(boomgatethreads + i, NULL, boomgateInit,(void *) bg);
     }
 
+    // Create threads for the LPR sensors
+    pthread_t *lprthreads = malloc(sizeof(pthread_t) * (ENTRANCES + EXITS));
+    // For LPR entrance
+    for (int i = 0; i < ENTRANCES; i++) {
+        lpr_sensor_t *lpr = &shm.data->entrance[i].lpr_sensor;
+        pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
+    }
+    // For LPR exit
+    for (int i = 0; i < EXITS; i++) {
+        lpr_sensor_t *lpr = &shm.data->exit[i].lpr_sensor;
+        pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
+    }
+    // For LPR on each level 
+    for (int i = 0; i < LEVELS; i++) {
+        lpr_sensor_t *lpr = &shm.data->level[i].lpr_sensor;
+        pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
+    }
 
-    // Create threads for the boom gate
-    //pthread_t *boomgatethreads = malloc(sizeof(pthread_t) * (ENTRANCES + EXITS));
-
-    // for (int i = 0; i < ENTRANCES; i++){
-    //     boom_gate_t *boomgate = &shm.data->entrance[i].boom_gate;
-    //     boomgate->status = 'C';
-    //     pthread_create(&boomgatethreads[i], &pthreadAttr, boomgateInit, boomgate);
-    // }
 
 
-    // for (int i = 0; i < ENTRANCES; i++) {
-
-    //     pthread_mutex_init(&shm.data->entrance[i].boom_gate.mutex, &mutexAttr);
-    //     pthread_cond_init(&shm.data->entrance[i].boom_gate.cond, &condAttr);
-    //     setBoomGateStatus(&shm.data->entrance[i].boom_gate, 'C');
-        
-
-    // }
-
-    // for (int i = 0; i < EXITS; i++) {
-    //     pthread_mutex_init(&shm.data->exit[i].boom_gate.mutex, NULL);
-    //     pthread_cond_init(&shm.data->exit[i].boom_gate.cond, NULL);
-    //     setBoomGateStatus(&shm.data->exit[i].boom_gate, 'C');
-    // }
 }
 
 // main function 
@@ -205,69 +298,52 @@ int main(void)
     create_shared_object(&shm, "PARKING");
     setDefaults(shm);
 
-    // Loop through get plate function
-    // for (;;){
-    //     // Get a plate
-    //     char *plate = getPlate();
-    //     // Print the plate
-    //     printf("%s", plate);
-    //     // Sleep for a bit
-    //     usleep(1000 * MS_IN_MICROSECONDS);
-        
-    //     // open all the boom gates
-    //     for (int i = 0; i < ENTRANCES; i++) {
-    //         shm.data->entrance[i].boom_gate.status = 'R';
-    //     }
-    //     // sleep for a bit
-    //     usleep(2000 * MS_IN_MICROSECONDS);
+    // create a thread to generate cars
+    pthread_t carGen;
+    // copy shm to a new pointer
+    //shared_memory_t *shmCar = &shm;
 
-    //     // check all the boom gates
-    //     for (int i = 0; i < ENTRANCES; i++) {
-    //         pthread_t boomgatethread;
-    //         pthread_create(&boomgatethread, NULL, boomGateSimualtor, &shm.data->entrance[i].boom_gate);
-    //         pthread_join(boomgatethread, NULL);
-    //     }
-    //     // sleep for a bit
-    //     usleep(2000 * MS_IN_MICROSECONDS);
-    //     // close all the boom gates
-    //     for (int i = 0; i < ENTRANCES; i++) {
-    //         shm.data->entrance[i].boom_gate.status = 'L';
-    //     }
+    shared_memory_data_t *shmCar = shm.data;
+    
 
-    //     // check all the boom gates
-    //     for (int i = 0; i < ENTRANCES; i++) {
-    //         pthread_t boomgatethread;
-    //         pthread_create(&boomgatethread, NULL, boomGateSimualtor, &shm.data->entrance[i].boom_gate);
-    //         pthread_join(boomgatethread, NULL);
+    //lpr_sensor_t *lpr2 = &shm.data->entrance->lpr_sensor;
+    pthread_create(&carGen, NULL, generateCar, (void *) shmCar);
 
-    //     }
+    // Change level 4 LPR plate 
 
-    //     // sleep for a bit
-    //     usleep(2000 * MS_IN_MICROSECONDS);
-        
-    // }
-
+    // Put string into LPR sensor plate
+    // char *plate = getPlate();
+    // lpr_sensor_t *lpr = &shm.data->entrance[0].lpr_sensor;
+    // memcpy(lpr->plate, plate, sizeof(char)*6);
+    // printf("%s read into level LPR\n", lpr->plate);
+    // free(plate);
 
     for (;;) {
 
+        // // Close the boom gates for testing
+        // for (int i = 0; i < ENTRANCES; i++) {
+        //     shm.data->entrance[i].boom_gate.status = 'L';
+        // }
         
-        
-
         for(int i = 0; i < ENTRANCES; i++) {
             boom_gate_t *bg = &shm.data->entrance[i].boom_gate;
 
             if (bg->status == 'R'){
                 pthread_t boomgatethread;
                 pthread_create(&boomgatethread, NULL,(void *(*)(void *))boomGateSimualtor, (void *) bg);
-                pthread_join(boomgatethread, NULL);
+                //pthread_join(boomgatethread, NULL);
             }
             else if (bg->status == 'L'){
                 pthread_t boomgatethread;
                 pthread_create(&boomgatethread, NULL,(void *(*)(void *))boomGateSimualtor, (void *) bg);
-                pthread_join(boomgatethread, NULL);
+                //pthread_join(boomgatethread, NULL);
             }
         }
         
+
+    
+
+        usleep(5 * MS_IN_MICROSECONDS);
 
     }
 

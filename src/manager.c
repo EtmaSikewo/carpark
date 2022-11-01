@@ -82,13 +82,17 @@ level 4: 0/100
 level 5: 0/100
 */
 
-
+    // Sleep for abit 
+    usleep(4000 * MS_IN_MICROSECONDS);
     // Set all boom gates to raise
-    for (int i = 0; i < ENTRANCES; i++) {
-        shm.data->entrance[i].boom_gate.status = 'R';
-    }
+    // for (int i = 0; i < ENTRANCES; i++) {
+    //     shm.data->entrance[i].boom_gate.status = 'L';
+    // }
 
     for(;;){
+        
+        
+
         //Clear the console each loop
         system("clear");
         //Print the status of the boom gates
@@ -97,13 +101,13 @@ level 5: 0/100
         for(int i = 0; i < ENTRANCES; i++){
             printf("%d: %c                %d: %c\n", i+1, shm.data->entrance[i].boom_gate.status, i+1, shm.data->exit[i].boom_gate.status);
         }
-        // printf("\n");
-        // //Print the status of the LPR sensors
-        // printf("Status of the LPR sensors\n");
-        // printf("Entrances           Exits           Level\n");
-        // for(int i = 0; i < ENTRANCES; i++){
-        //     printf("%d: %c                %d: %c                %d: %c\n", i+1, shm.data->entrance[i].lpr_sensor.status, i+1, shm.data->exit[i].lpr_sensor.status, i+1, shm.data->level[i].lpr_sensor.status);
-        // }
+        printf("\n");
+        //Print the status of the LPR sensors
+        printf("Status of the LPR sensors\n");
+        printf("Entrances           Exits           Level\n");
+        for(int i = 0; i < ENTRANCES; i++){
+            printf("%d: %s                %d: %s                %d: %s\n", i+1, shm.data->entrance[i].lpr_sensor.plate, i+1, shm.data->exit[i].lpr_sensor.plate, i+1, shm.data->level[i].lpr_sensor.plate);
+        }
         // printf("\n");
         // //Print the status of the information signs
         // printf("Status of the information signs\n");
@@ -117,25 +121,9 @@ level 5: 0/100
         //     printf("level %d: %d/%d\n", i+1, shm.data->level[i].currLevelCapacity, PARKING_CAPACITY);
         // }
         printf("\n");
-        usleep(10 * MS_IN_MICROSECONDS);
+        usleep(5 * MS_IN_MICROSECONDS);
 
-        // Randomly change the status of the boom gates
-        // for(int i = 0; i < ENTRANCES; i++){
-        //     if(rand() % 500 == 0){
-        //         if(rand() % 200 == 0){
-        //             shm.data->entrance[i].boom_gate.status = 'R';
-        //         } else {
-        //             shm.data->entrance[i].boom_gate.status = 'L';
-        //         }
-        //     }   
-        //     if(rand()% 500 == 0) {
-        //         if(rand() % 200 == 0){
-        //             shm.data->exit[i].boom_gate.status = 'R';
-        //         } else {
-        //             shm.data->exit[i].boom_gate.status = 'L';
-        //         }
-        //     }
-        // }
+    
 
     }
 
