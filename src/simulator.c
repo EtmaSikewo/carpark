@@ -250,7 +250,7 @@ void *carThread(void *shmCar){
 
 
     // // If the car is rejected by the car park or full 
-    // if (info->display == 'F' || info->display == 'X'){
+    // if (info->display == 'F' || info->display == 'X' || info->display == typeChar){
     //     // Print the rejection message
     //     printf("%s has been rejected\n", LicensePlate);
     //     // Unlock the mutex

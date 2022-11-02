@@ -49,7 +49,6 @@ void *lprEntranceHandler(void *arg)
 
         // pthread_cond_signal(&shm.data->entrance[gate].information_sign.cond);
 
-
     }
     
     // for(;;){
