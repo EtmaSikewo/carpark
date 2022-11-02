@@ -45,13 +45,16 @@ void *lprEntranceHandler(void *arg)
     //information_sign_t *information_sign = &shm.data->entrance[gate].information_sign;
     //information_sign->display = '4';
 
-    printf("Waiting for condition at entrance %d", gate);
+    
     // Lock mutex
     //pthread_mutex_lock(&lpr->mutex);
 
     for (;;){
         // Wait for condition
+        pthread_mutex_lock(&lpr->mutex);
+        printf("Waiting for condition at entrance %d\n", gate);
         pthread_cond_wait(&lpr->cond, &lpr->mutex);
+        pthread_mutex_unlock(&lpr->mutex);
         printf("Condition met at entrance %d", gate);
     }
     

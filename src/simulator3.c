@@ -226,10 +226,9 @@ void *carThread(void *shmCar){
     //pthread_cond_broadcast(&lpr->cond);
     // Signal the LPR sensor
 
-    // Lock the LPR mutex
-    pthread_mutex_lock(&lpr->mutex);
     pthread_cond_signal(&lpr->cond);
-    pthread_mutex_unlock(&lpr->mutex);
+    // broadcast the condition variable
+    pthread_cond_broadcast(&lpr->cond);
 
     //pthread_mutex_unlock(&lpr->mutex);
 
@@ -327,6 +326,7 @@ void setDefaults(shared_memory_t shm) {
     pthread_condattr_init(&condAttr);
     pthread_mutexattr_setpshared(&mutexAttr, PTHREAD_PROCESS_SHARED);
     pthread_condattr_setpshared(&condAttr, PTHREAD_PROCESS_SHARED);
+    
     
     pthread_t *boomgatethreads = malloc(sizeof(pthread_t) * (ENTRANCES + EXITS));
     
