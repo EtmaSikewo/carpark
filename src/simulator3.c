@@ -67,9 +67,11 @@ void *initLPR(void *arg)
 	lpr_sensor_t *lpr = arg;
 
     // check if failed 
-    if (pthread_mutex_init(&lpr->mutex, NULL) != 0) {
+    if (pthread_mutex_init(&lpr->mutex, &mutexAttr) != 0) {
         printf("LPR mutex init failed");
     }
+
+    pthread_cond_init(&lpr->cond, &condAttr);
     return NULL;
 }
 
@@ -220,7 +222,7 @@ void *carThread(void *shmCar){
     // Lock the LPR mutex
     //pthread_mutex_lock(&lpr->mutex);
 
-    memcpy(lpr->plate, LicensePlate, sizeof(LicensePlate));
+    strcpy(lpr->plate, LicensePlate, sizeof(LicensePlate));
 
     // Broadcast the condition variable
     //pthread_cond_broadcast(&lpr->cond);
@@ -332,11 +334,15 @@ void setDefaults(shared_memory_t shm) {
     
     for (int i = 0; i < ENTRANCES; i++) {
 		boom_gate_t *bg = &shm.data->entrance[i].boom_gate;
+        pthread_mutex_init(&bg.mutex, &mutexAttr);
+        pthread_cond_init(&bg.cond, &condAttr);
 		pthread_create(boomgatethreads + i, NULL, boomgateInit,(void *) bg);
 	}
 
     for (int i = 0; i < EXITS; i++) {
         boom_gate_t *bg = &shm.data->exit[i].boom_gate;
+        pthread_mutex_init(&bg.mutex, &mutexAttr);
+        pthread_cond_init(&bg.cond, &condAttr);
         pthread_create(boomgatethreads + i, NULL, boomgateInit,(void *) bg);
     }
 
@@ -345,16 +351,22 @@ void setDefaults(shared_memory_t shm) {
     // For LPR entrance
     for (int i = 0; i < ENTRANCES; i++) {
         lpr_sensor_t *lpr = &shm.data->entrance[i].lpr_sensor;
+        pthread_mutex_init(&lpr.mutex, &mutexAttr);
+        pthread_cond_init(&lpr.cond, &condAttr);
         pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
     }
     // For LPR exit
     for (int i = 0; i < EXITS; i++) {
         lpr_sensor_t *lpr = &shm.data->exit[i].lpr_sensor;
+        pthread_mutex_init(&lpr.mutex, &mutexAttr);
+        pthread_cond_init(&lpr.cond, &condAttr);
         pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
     }
     // For LPR on each level 
     for (int i = 0; i < LEVELS; i++) {
         lpr_sensor_t *lpr = &shm.data->level[i].lpr_sensor;
+        pthread_mutex_init(&lpr.mutex, &mutexAttr);
+        pthread_cond_init(&lpr.cond, &condAttr);
         pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
     }
 
@@ -363,6 +375,8 @@ void setDefaults(shared_memory_t shm) {
     // For info signs entrance
     for (int i = 0; i < ENTRANCES; i++) {
         information_sign_t *info = &shm.data->entrance[i].information_sign;
+        pthread_mutex_init(&info.mutex, &mutexAttr);
+        pthread_cond_init(&info.cond, &condAttr);
         pthread_create(infothreads + i, NULL, initDisplay,(void *) info);
     }
 
