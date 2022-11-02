@@ -62,18 +62,24 @@ int randLevel(void){
 // Methods for the LPR sensor
 //---------------------------------------------
 // Initialise the LPR sensor
-void *initLPR(void *arg)
-{
-	lpr_sensor_t *lpr = arg;
+// void *initLPR(void *arg)
+// {
+// 	lpr_sensor_t *lpr = arg;
 
-    // check if failed 
-    if (pthread_mutex_init(&lpr->mutex, &mutexAttr) != 0) {
-        printf("LPR mutex init failed");
-    }
+//     // check if mutex failed
+//     if (pthread_mutex_init(&lpr->mutex, NULL) != 0)
+//     {
+//         printf("Mutex init failed");
+//     }
 
-    pthread_cond_init(&lpr->cond, &condAttr);
-    return NULL;
-}
+//     // check if failed 
+//     // if (pthread_mutex_init(&lpr->mutex, &mutexAttr) != 0) {
+//     //     printf("LPR mutex init failed");
+//     // }
+
+//     //pthread_cond_init(&lpr->cond, &condAttr);
+//     return NULL;
+// }
 
 //---------------------------------------------
 // Methods for the information display
@@ -206,10 +212,10 @@ void *carThread(void *shmCar){
     // Grab a random level 
     int level = randLevel();
     // Grab a random exit level 
-    //int exitLevel = randLevel();
+    int exitLevel = randLevel();
     // Grab a random time to wait
     //!TODO TIMINGS
-    //int waitTime = randThread() % 1000;
+    int waitTime = randThread() % 1000;
 
 
     // print car details
@@ -222,7 +228,8 @@ void *carThread(void *shmCar){
     // Lock the LPR mutex
     //pthread_mutex_lock(&lpr->mutex);
 
-    strcpy(lpr->plate, LicensePlate, sizeof(LicensePlate));
+    //memcpy(lpr->plate, LicensePlate, sizeof(LicensePlate));
+    strcpy(lpr->plate, LicensePlate);
 
     // Broadcast the condition variable
     //pthread_cond_broadcast(&lpr->cond);
@@ -236,49 +243,54 @@ void *carThread(void *shmCar){
 
     // TO THIS POINT
 
-    // // Wait for the info sign to say the car can enter
-    // information_sign_t *info = &shm->entrance[level-1].information_sign;
-    // pthread_cond_wait(&info->cond, &info->mutex);
+    // Wait for the info sign to say the car can enter
+    information_sign_t *info = &shm->entrance[level].information_sign;
+    pthread_cond_wait(&info->cond, &info->mutex);
 
 
-    // // If the car is rejected by the car park or full 
-    // if (info->display == 'F' || info->display == 'X'){
-    //     // Print the rejection message
-    //     printf("%s has been rejected\n", LicensePlate);
-    //     // Unlock the mutex
-    //     pthread_mutex_unlock(&info->mutex);
-    //     // Exit the thread
-    //     pthread_exit(NULL);
-    // }
+    // If the car is rejected by the car park or full 
+    if (info->display == 'F' || info->display == 'X'){
+        // Print the rejection message
+        printf("%s has been rejected\n", LicensePlate);
+        // Unlock the mutex
+        pthread_mutex_unlock(&info->mutex);
+        // Exit the thread
+        pthread_exit(NULL);
+    }
 
-    // // Check if the information sign gave an integer
-    // if (info->display == '1' || info->display == '2' || info->display == '3' || info->display == '4' || info->display == '5'){
-    //     // Print the acceptance message
-    //     printf("%s heading to level ", LicensePlate);
-    //     // Trigger level LPR 
-    //     //lpr_sensor_t *levelLpr = &shm->level[info->display - '0' - 1].lpr_sensor;
-    //     //int level = atoi(info->display);
-    //     // Unlock the mutex
-    //     pthread_mutex_unlock(&info->mutex);
+    // Check if the information sign gave an integer
+    if (info->display == '1' || info->display == '2' || info->display == '3' || info->display == '4' || info->display == '5'){
+        // Print the acceptance message
+        printf("%s heading to level ", LicensePlate);
 
-    //     usleep(waitTime * MS_IN_MICROSECONDS);
-    //     printf("Car is leaving the car park\n");
-    //     //Trigger exit LPR
-    //     lpr_sensor_t *exitLPR = &shm->exit[exitLevel].lpr_sensor;
-    //     memcpy(exitLPR->plate, LicensePlate, sizeof(LicensePlate));
+        // Simulate boom gate to open
+        usleep(10 * MS_IN_MICROSECONDS);
 
-    //     // Exit the thread
-    //     pthread_exit(NULL);
-    // }
 
-    // else {
-    //     // Print the rejection message
-    //     printf("NOT A VALID CHARACTER");
-    //     // Unlock the mutex
-    //     pthread_mutex_unlock(&info->mutex);
-    //     // Exit the thread
-    //     pthread_exit(NULL);
-    // }
+        // Trigger level LPR 
+        //lpr_sensor_t *levelLpr = &shm->level[info->display - '0' - 1].lpr_sensor;
+        //int level = atoi(info->display);
+        // Unlock the mutex
+        pthread_mutex_unlock(&info->mutex);
+
+        usleep(waitTime * MS_IN_MICROSECONDS);
+        printf("Car is leaving the car park\n");
+        //Trigger exit LPR
+        lpr_sensor_t *exitLPR = &shm->exit[exitLevel].lpr_sensor;
+        memcpy(exitLPR->plate, LicensePlate, sizeof(LicensePlate));
+
+        // Exit the thread
+        pthread_exit(NULL);
+    }
+
+    else {
+        // Print the rejection message
+        printf("NOT A VALID CHARACTER");
+        // Unlock the mutex
+        pthread_mutex_unlock(&info->mutex);
+        // Exit the thread
+        pthread_exit(NULL);
+    }
 
 
 
@@ -289,16 +301,18 @@ void *carThread(void *shmCar){
 
 // Generate a car every 1-100ms 
 void *generateCar(void *shm ){
+    // Wait 10 seconds before generating cars
+    usleep(10000 * MS_IN_MICROSECONDS);
     printf("Generating cars\n");
     // Setting the maxmium amount of spawned cars before queue implementation!!!
     //!TODO: Implement queue
-    int maximumCars = 100;
+    int maximumCars = 1;
     pthread_t cars[maximumCars];
     for (int i = 0; i < maximumCars; i++){
         pthread_create(&cars[i], NULL, carThread, shm);
         int time = (randThread() % (100 - 1 + 1)) + 1; // create random wait time between 1-100ms
         
-        int TestingMultiplier = 50;
+        int TestingMultiplier = 20;
         
         usleep(time*MS_IN_MICROSECONDS * TestingMultiplier);
     }
@@ -334,51 +348,51 @@ void setDefaults(shared_memory_t shm) {
     
     for (int i = 0; i < ENTRANCES; i++) {
 		boom_gate_t *bg = &shm.data->entrance[i].boom_gate;
-        pthread_mutex_init(&bg.mutex, &mutexAttr);
-        pthread_cond_init(&bg.cond, &condAttr);
+        pthread_mutex_init(&bg->mutex, &mutexAttr);
+        pthread_cond_init(&bg->cond, &condAttr);
 		pthread_create(boomgatethreads + i, NULL, boomgateInit,(void *) bg);
 	}
 
     for (int i = 0; i < EXITS; i++) {
         boom_gate_t *bg = &shm.data->exit[i].boom_gate;
-        pthread_mutex_init(&bg.mutex, &mutexAttr);
-        pthread_cond_init(&bg.cond, &condAttr);
+        pthread_mutex_init(&bg->mutex, &mutexAttr);
+        pthread_cond_init(&bg->cond, &condAttr);
         pthread_create(boomgatethreads + i, NULL, boomgateInit,(void *) bg);
     }
 
     // Create threads for the LPR sensors
-    pthread_t *lprthreads = malloc(sizeof(pthread_t) * (ENTRANCES + EXITS));
+    //pthread_t *lprthreads = malloc(sizeof(pthread_t) * (ENTRANCES + EXITS));
     // For LPR entrance
     for (int i = 0; i < ENTRANCES; i++) {
         lpr_sensor_t *lpr = &shm.data->entrance[i].lpr_sensor;
-        pthread_mutex_init(&lpr.mutex, &mutexAttr);
-        pthread_cond_init(&lpr.cond, &condAttr);
-        pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
+        pthread_mutex_init(&lpr->mutex, &mutexAttr);
+        pthread_cond_init(&lpr->cond, &condAttr);
+        //pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
     }
     // For LPR exit
     for (int i = 0; i < EXITS; i++) {
         lpr_sensor_t *lpr = &shm.data->exit[i].lpr_sensor;
-        pthread_mutex_init(&lpr.mutex, &mutexAttr);
-        pthread_cond_init(&lpr.cond, &condAttr);
-        pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
+        pthread_mutex_init(&lpr->mutex, &mutexAttr);
+        pthread_cond_init(&lpr->cond, &condAttr);
+        //pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
     }
     // For LPR on each level 
     for (int i = 0; i < LEVELS; i++) {
         lpr_sensor_t *lpr = &shm.data->level[i].lpr_sensor;
-        pthread_mutex_init(&lpr.mutex, &mutexAttr);
-        pthread_cond_init(&lpr.cond, &condAttr);
-        pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
+        pthread_mutex_init(&lpr->mutex, &mutexAttr);
+        pthread_cond_init(&lpr->cond, &condAttr);
+        //pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
     }
 
-    // Create threads for the info signs
-    pthread_t *infothreads = malloc(sizeof(pthread_t) * (ENTRANCES));
-    // For info signs entrance
-    for (int i = 0; i < ENTRANCES; i++) {
-        information_sign_t *info = &shm.data->entrance[i].information_sign;
-        pthread_mutex_init(&info.mutex, &mutexAttr);
-        pthread_cond_init(&info.cond, &condAttr);
-        pthread_create(infothreads + i, NULL, initDisplay,(void *) info);
-    }
+    // // Create threads for the info signs
+    // pthread_t *infothreads = malloc(sizeof(pthread_t) * (ENTRANCES));
+    // // For info signs entrance
+    // for (int i = 0; i < ENTRANCES; i++) {
+    //     information_sign_t *info = &shm.data->entrance[i].information_sign;
+    //     pthread_mutex_init(&info.mutex, &mutexAttr);
+    //     pthread_cond_init(&info.cond, &condAttr);
+    //     pthread_create(infothreads + i, NULL, initDisplay,(void *) info);
+    // }
 
 
 }
