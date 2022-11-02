@@ -42,20 +42,30 @@ void *lprEntranceHandler(void *arg)
 
     lpr_sensor_t *lpr = &shm.data->entrance[gate].lpr_sensor;
     //boom_gate_t *boom_gate = &entrance->boom_gate;
-    information_sign_t *information_sign = &shm.data->entrance[gate].information_sign;
-    information_sign->display = '4';
+    //information_sign_t *information_sign = &shm.data->entrance[gate].information_sign;
+    //information_sign->display = '4';
 
-    for(;;){
-        pthread_mutex_lock(&lpr->mutex);
+    printf("Waiting for condition at entrance %d", gate);
+    // Lock mutex
+    //pthread_mutex_lock(&lpr->mutex);
+
+    for (;;){
+        // Wait for condition
         pthread_cond_wait(&lpr->cond, &lpr->mutex);
-        printf("Found: %s\n", lpr->plate);
-        pthread_mutex_unlock(&lpr->mutex);
-        pthread_mutex_lock(&information_sign->mutex);
-        
-        pthread_cond_signal(&information_sign->cond);
-        pthread_mutex_unlock(&information_sign->mutex);
-
+        printf("Condition met at entrance %d", gate);
     }
+    
+    // for(;;){
+    //     pthread_mutex_lock(&lpr->mutex);
+    //     //pthread_cond_wait(&lpr->cond, &lpr->mutex);
+    //     //printf("Found: %s\n", lpr->plate);
+    //     pthread_mutex_unlock(&lpr->mutex);
+    //     //pthread_mutex_lock(&information_sign->mutex);
+        
+    //     //pthread_cond_signal(&information_sign->cond);
+    //     //pthread_mutex_unlock(&information_sign->mutex);
+
+    // }
 
     return NULL;
     
@@ -64,76 +74,78 @@ void *lprEntranceHandler(void *arg)
 
 
 
-// void display(shared_memory_t shm){     
-//         // ---------------------------------------------
-//         // Template for the manager UI 
-//         // ---------------------------------------------
+void display(shared_memory_t shm){     
+        // ---------------------------------------------
+        // Template for the manager UI 
+        // ---------------------------------------------
 
-//         /*
-//         Status of the boom gates
-//         Entrances           Exits
-//         1: C                1: C
-//         2: C                2: C
-//         3: C                3: C
-//         4: C                4: C
-//         5: C                5: C
+        /*
+        Status of the boom gates
+        Entrances           Exits
+        1: C                1: C
+        2: C                2: C
+        3: C                3: C
+        4: C                4: C
+        5: C                5: C
 
-//         Status of the LPR sensors
-//         Entrances           Exits           Level
-//         1: 
-//         2:
-//         3:
-//         4:
-//         5:
+        Status of the LPR sensors
+        Entrances           Exits           Level
+        1: 
+        2:
+        3:
+        4:
+        5:
 
-//         Status of the information signs 
-//         1:  2:  3:  4:  5:
+        Status of the information signs 
+        1:  2:  3:  4:  5:
 
-//         Level information 
-//         level 1: 0/100
-//         level 2: 0/100
-//         level 3: 0/100
-//         level 4: 0/100
-//         level 5: 0/100
-//         */   
-//         //Clear the console each loop
-//         system("clear");
+        Level information 
+        level 1: 0/100
+        level 2: 0/100
+        level 3: 0/100
+        level 4: 0/100
+        level 5: 0/100
+        */   
+        //Clear the console each loop
+        system("clear");
         
-//         //Print the status of the boom gates
-//         printf("Status of the boom gates\n");
-//         printf("Entrances           Exits\n");
-//         for(int i = 0; i < ENTRANCES; i++){
-//             printf("%d: %c                %d: %c\n", i+1, shm.data->entrance[i].boom_gate.status, i+1, shm.data->exit[i].boom_gate.status);
-//         }
-//         printf("\n");
-//         //Print the status of the LPR sensors
-//         printf("Status of the LPR sensors\n");
-//         printf("Entrances           Exits           Level\n");
-//         for(int i = 0; i < ENTRANCES; i++){
-//             printf("%d: %s                %d: %s                %d: %s\n", i+1, shm.data->entrance[i].lpr_sensor.plate, i+1, shm.data->exit[i].lpr_sensor.plate, i+1, shm.data->level[i].lpr_sensor.plate);
-//         }
-//         // printf("\n");
-//         // //Print the status of the information signs
-//         // printf("Status of the information signs\n");
-//         // for(int i = 0; i < ENTRANCES; i++){
-//         //     printf("%d: %c  ", i+1, shm.data->entrance[i].info_sign.status);
-//         // }
-//         // printf("\n");
-//         // //Print the level information
-//         // printf("Level information\n");
-//         // for(int i = 0; i < LEVELS; i++){
-//         //     printf("level %d: %d/%d\n", i+1, shm.data->level[i].currLevelCapacity, PARKING_CAPACITY);
-//         // }
-//         printf("\n");
-//         usleep(5 * MS_IN_MICROSECONDS);
+        //Print the status of the boom gates
+        printf("Status of the boom gates\n");
+        printf("Entrances           Exits\n");
+        for(int i = 0; i < ENTRANCES; i++){
+            printf("%d: %c                %d: %c\n", i+1, shm.data->entrance[i].boom_gate.status, i+1, shm.data->exit[i].boom_gate.status);
+        }
+        printf("\n");
+        //Print the status of the LPR sensors
+        printf("Status of the LPR sensors\n");
+        printf("Entrances           Exits           Level\n");
+        for(int i = 0; i < ENTRANCES; i++){
+            printf("%d: %s                %d: %s                %d: %s\n", i+1, shm.data->entrance[i].lpr_sensor.plate, i+1, shm.data->exit[i].lpr_sensor.plate, i+1, shm.data->level[i].lpr_sensor.plate);
+        }
+        // printf("\n");
+        // //Print the status of the information signs
+        // printf("Status of the information signs\n");
+        // for(int i = 0; i < ENTRANCES; i++){
+        //     printf("%d: %c  ", i+1, shm.data->entrance[i].info_sign.status);
+        // }
+        // printf("\n");
+        // //Print the level information
+        // printf("Level information\n");
+        // for(int i = 0; i < LEVELS; i++){
+        //     printf("level %d: %d/%d\n", i+1, shm.data->level[i].currLevelCapacity, PARKING_CAPACITY);
+        // }
+        printf("\n");
+        usleep(5 * MS_IN_MICROSECONDS);
 
 
-//     }
+    }
 
 
 
 int main(void)
 {
+
+    
     // Sleep for abit 
     usleep(2000 * MS_IN_MICROSECONDS);
 
@@ -157,19 +169,22 @@ int main(void)
     // Thread for the entranceLPRSensors
     pthread_t lprThreadEntrances[ENTRANCES]; 
 
+    printf("Issues\n");
+
     // LPR memory 
     //Create a thead for each Entrance LPR
     for (int i = 0; i < ENTRANCES; i++){
         pthread_create(&lprThreadEntrances[i], NULL, lprEntranceHandler, (void *) (&entranceData[i]));
     }
+    printf("Issues2\n");
     
     
 
     
-    // for (;;){
-    //     //display(shm);
+    for (;;){
+        //display(shm);
 
-    // }
+    }
    
 
 }

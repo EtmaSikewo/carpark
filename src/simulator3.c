@@ -204,68 +204,80 @@ void *carThread(void *shmCar){
     // Grab a random level 
     int level = randLevel();
     // Grab a random exit level 
-    int exitLevel = randLevel();
+    //int exitLevel = randLevel();
     // Grab a random time to wait
-    int waitTime = randThread() % 1000;
+    //!TODO TIMINGS
+    //int waitTime = randThread() % 1000;
 
 
     // print car details
     printf("%s has arrived at entrance %d\n", LicensePlate, level+1);
-    // Lock the mutex for the LPR 
-    //pthread_mutex_lock(&shm.data->lpr[level].mutex);
-    //AHHHHHHHHHH
+
 
     // Access the levels LPR sensor
     lpr_sensor_t *lpr = &shm->entrance[level].lpr_sensor;
 
+    // Lock the LPR mutex
+    //pthread_mutex_lock(&lpr->mutex);
+
     memcpy(lpr->plate, LicensePlate, sizeof(LicensePlate));
 
     // Broadcast the condition variable
-    pthread_cond_broadcast(&lpr->cond);
+    //pthread_cond_broadcast(&lpr->cond);
+    // Signal the LPR sensor
 
-    // Wait for the info sign to say the car can enter
-    information_sign_t *info = &shm->entrance[level-1].information_sign;
-    pthread_cond_wait(&info->cond, &info->mutex);
+    // Lock the LPR mutex
+    pthread_mutex_lock(&lpr->mutex);
+    pthread_cond_signal(&lpr->cond);
+    pthread_mutex_unlock(&lpr->mutex);
+
+    //pthread_mutex_unlock(&lpr->mutex);
+
+    // TO THIS POINT
+
+    // // Wait for the info sign to say the car can enter
+    // information_sign_t *info = &shm->entrance[level-1].information_sign;
+    // pthread_cond_wait(&info->cond, &info->mutex);
 
 
-    // If the car is rejected by the car park or full 
-    if (info->display == 'F' || info->display == 'X'){
-        // Print the rejection message
-        printf("%s has been rejected\n", LicensePlate);
-        // Unlock the mutex
-        pthread_mutex_unlock(&info->mutex);
-        // Exit the thread
-        pthread_exit(NULL);
-    }
+    // // If the car is rejected by the car park or full 
+    // if (info->display == 'F' || info->display == 'X'){
+    //     // Print the rejection message
+    //     printf("%s has been rejected\n", LicensePlate);
+    //     // Unlock the mutex
+    //     pthread_mutex_unlock(&info->mutex);
+    //     // Exit the thread
+    //     pthread_exit(NULL);
+    // }
 
-    // Check if the information sign gave an integer
-    if (info->display == '1' || info->display == '2' || info->display == '3' || info->display == '4' || info->display == '5'){
-        // Print the acceptance message
-        printf("%s heading to level ", LicensePlate);
-        // Trigger level LPR 
-        //lpr_sensor_t *levelLpr = &shm->level[info->display - '0' - 1].lpr_sensor;
-        //int level = atoi(info->display);
-        // Unlock the mutex
-        pthread_mutex_unlock(&info->mutex);
+    // // Check if the information sign gave an integer
+    // if (info->display == '1' || info->display == '2' || info->display == '3' || info->display == '4' || info->display == '5'){
+    //     // Print the acceptance message
+    //     printf("%s heading to level ", LicensePlate);
+    //     // Trigger level LPR 
+    //     //lpr_sensor_t *levelLpr = &shm->level[info->display - '0' - 1].lpr_sensor;
+    //     //int level = atoi(info->display);
+    //     // Unlock the mutex
+    //     pthread_mutex_unlock(&info->mutex);
 
-        usleep(waitTime * MS_IN_MICROSECONDS);
-        printf("Car is leaving the car park\n");
-        //Trigger exit LPR
-        lpr_sensor_t *exitLPR = &shm->exit[exitLevel].lpr_sensor;
-        memcpy(exitLPR->plate, LicensePlate, sizeof(LicensePlate));
+    //     usleep(waitTime * MS_IN_MICROSECONDS);
+    //     printf("Car is leaving the car park\n");
+    //     //Trigger exit LPR
+    //     lpr_sensor_t *exitLPR = &shm->exit[exitLevel].lpr_sensor;
+    //     memcpy(exitLPR->plate, LicensePlate, sizeof(LicensePlate));
 
-        // Exit the thread
-        pthread_exit(NULL);
-    }
+    //     // Exit the thread
+    //     pthread_exit(NULL);
+    // }
 
-    else {
-        // Print the rejection message
-        printf("NOT A VALID CHARACTER");
-        // Unlock the mutex
-        pthread_mutex_unlock(&info->mutex);
-        // Exit the thread
-        pthread_exit(NULL);
-    }
+    // else {
+    //     // Print the rejection message
+    //     printf("NOT A VALID CHARACTER");
+    //     // Unlock the mutex
+    //     pthread_mutex_unlock(&info->mutex);
+    //     // Exit the thread
+    //     pthread_exit(NULL);
+    // }
 
 
 
@@ -279,13 +291,13 @@ void *generateCar(void *shm ){
     printf("Generating cars\n");
     // Setting the maxmium amount of spawned cars before queue implementation!!!
     //!TODO: Implement queue
-    int maximumCars = 1;
+    int maximumCars = 100;
     pthread_t cars[maximumCars];
     for (int i = 0; i < maximumCars; i++){
         pthread_create(&cars[i], NULL, carThread, shm);
         int time = (randThread() % (100 - 1 + 1)) + 1; // create random wait time between 1-100ms
         
-        int TestingMultiplier = 100;
+        int TestingMultiplier = 50;
         
         usleep(time*MS_IN_MICROSECONDS * TestingMultiplier);
     }
