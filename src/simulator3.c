@@ -73,6 +73,21 @@ void *initLPR(void *arg)
     return NULL;
 }
 
+//---------------------------------------------
+// Methods for the information display
+//---------------------------------------------
+// Initialise the information display
+void *initDisplay(void *arg)
+{
+    information_sign_t *display = arg;
+
+    // check if failed 
+    if (pthread_mutex_init(&display->mutex, NULL) != 0) {
+        printf("Display mutex init failed");
+    }
+    return NULL;
+}
+
 
 // ---------------------------------------------
 // Functions relating to the boomgate          |
@@ -178,16 +193,21 @@ char *getPlate(){
 // TERRIBLE CAR GENERATOR FOR NOW!
 // ---------------------------------------------
 void *carThread(void *shmCar){
-
+    // Grab shared memory
     shared_memory_data_t *shm = shmCar;
-    
-    // Grab a random license plate
+    // Grab a random license plate from the text file
+    //!TODO: Make this generate a random license plate
     char *plate = getPlate();
     char LicensePlate[6];
     strcpy(LicensePlate, plate);
     free(plate);
     // Grab a random level 
     int level = randLevel();
+    // Grab a random exit level 
+    int exitLevel = randLevel();
+    // Grab a random time to wait
+    int waitTime = randThread() % 1000;
+
 
     // print car details
     printf("%s has arrived at entrance %d\n", LicensePlate, level+1);
@@ -200,11 +220,52 @@ void *carThread(void *shmCar){
 
     memcpy(lpr->plate, LicensePlate, sizeof(LicensePlate));
 
-    //memcpy(lpr->plate, LicensePlate, 6);
-    //pthread_mutex_unlock(&shm.data->lpr[level].mutex);
-    
+    // Broadcast the condition variable
+    pthread_cond_broadcast(&lpr->cond);
+
+    // Wait for the info sign to say the car can enter
+    information_sign_t *info = &shm->entrance[level-1].information_sign;
+    pthread_cond_wait(&info->cond, &info->mutex);
 
 
+    // If the car is rejected by the car park or full 
+    if (info->display == 'F' || info->display == 'X'){
+        // Print the rejection message
+        printf("%s has been rejected\n", LicensePlate);
+        // Unlock the mutex
+        pthread_mutex_unlock(&info->mutex);
+        // Exit the thread
+        pthread_exit(NULL);
+    }
+
+    // Check if the information sign gave an integer
+    if (info->display == '1' || info->display == '2' || info->display == '3' || info->display == '4' || info->display == '5'){
+        // Print the acceptance message
+        printf("%s heading to level ", LicensePlate);
+        // Trigger level LPR 
+        //lpr_sensor_t *levelLpr = &shm->level[info->display - '0' - 1].lpr_sensor;
+        //int level = atoi(info->display);
+        // Unlock the mutex
+        pthread_mutex_unlock(&info->mutex);
+
+        usleep(waitTime * MS_IN_MICROSECONDS);
+        printf("Car is leaving the car park\n");
+        //Trigger exit LPR
+        lpr_sensor_t *exitLPR = &shm->exit[exitLevel].lpr_sensor;
+        memcpy(exitLPR->plate, LicensePlate, sizeof(LicensePlate));
+
+        // Exit the thread
+        pthread_exit(NULL);
+    }
+
+    else {
+        // Print the rejection message
+        printf("NOT A VALID CHARACTER");
+        // Unlock the mutex
+        pthread_mutex_unlock(&info->mutex);
+        // Exit the thread
+        pthread_exit(NULL);
+    }
 
 
 
@@ -216,7 +277,9 @@ void *carThread(void *shmCar){
 // Generate a car every 1-100ms 
 void *generateCar(void *shm ){
     printf("Generating cars\n");
-    int maximumCars = 1000;
+    // Setting the maxmium amount of spawned cars before queue implementation!!!
+    //!TODO: Implement queue
+    int maximumCars = 1;
     pthread_t cars[maximumCars];
     for (int i = 0; i < maximumCars; i++){
         pthread_create(&cars[i], NULL, carThread, shm);
@@ -283,6 +346,13 @@ void setDefaults(shared_memory_t shm) {
         pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
     }
 
+    // Create threads for the info signs
+    pthread_t *infothreads = malloc(sizeof(pthread_t) * (ENTRANCES));
+    // For info signs entrance
+    for (int i = 0; i < ENTRANCES; i++) {
+        information_sign_t *info = &shm.data->entrance[i].information_sign;
+        pthread_create(infothreads + i, NULL, initDisplay,(void *) info);
+    }
 
 
 }
@@ -339,9 +409,7 @@ int main(void)
                 //pthread_join(boomgatethread, NULL);
             }
         }
-        
 
-    
 
         usleep(5 * MS_IN_MICROSECONDS);
 
