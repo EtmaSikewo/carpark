@@ -10,22 +10,6 @@
 
 #define MS_IN_MICROSECONDS 1000
 
-// int currLevelCapacity[LEVELS];
-
-//  structs for car and level managers
-// typedef struct car_manager
-// {
-//     char plate[6];   //  default value is "000000"
-//     int timeEntered; //  between 100-10000ms
-// } car_manager_t;
-// typedef struct level_manager
-// {
-//     int currLevelCapacity;
-//     car_manager_t car_manager[PARKING_CAPACITY];
-// } levels_t;
-
-// levels_t levels[LEVELS];
-
 // Save shm and gate number in a struct
 typedef struct gate_data
 {
@@ -52,17 +36,18 @@ void *lprEntranceHandler(void *arg)
     for (;;){
         // Wait for condition
         pthread_mutex_lock(&lpr->mutex);
+        printf("Waiting for condition at gate %d\n", gate);
         pthread_cond_wait(&lpr->cond, &lpr->mutex);
         pthread_mutex_unlock(&lpr->mutex);
-        printf("Condition met at entrance %d", gate);
+        printf("Condition met at entrance %d\n", gate);
 
 
-        // Set info sign to 4
-        pthread_mutex_lock(&shm.data->entrance[gate].information_sign.mutex);
-        shm.data->entrance[gate].information_sign.display = '4';
-        pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
+        // // Set info sign to 4
+        // pthread_mutex_lock(&shm.data->entrance[gate].information_sign.mutex);
+        // shm.data->entrance[gate].information_sign.display = '4';
+        // pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
 
-        pthread_cond_signal(&shm.data->entrance[gate].information_sign.cond);
+        // pthread_cond_signal(&shm.data->entrance[gate].information_sign.cond);
 
 
     }
@@ -158,8 +143,8 @@ int main(void)
 {
 
     
-    // Sleep for abit 
-    usleep(2000 * MS_IN_MICROSECONDS);
+    // // Sleep for abit 
+    // usleep(2000 * MS_IN_MICROSECONDS);
 
     //  create the shared memory segment
     shared_memory_t shm;
@@ -181,14 +166,11 @@ int main(void)
     // Thread for the entranceLPRSensors
     pthread_t lprThreadEntrances[ENTRANCES]; 
 
-    printf("Issues\n");
-
     // LPR memory 
     //Create a thead for each Entrance LPR
     for (int i = 0; i < ENTRANCES; i++){
         pthread_create(&lprThreadEntrances[i], NULL, lprEntranceHandler, (void *) (&entranceData[i]));
     }
-    printf("Issues2\n");
     
     
 

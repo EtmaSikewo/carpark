@@ -212,10 +212,10 @@ void *carThread(void *shmCar){
     // Grab a random level 
     int level = randLevel();
     // Grab a random exit level 
-    int exitLevel = randLevel();
+    //int exitLevel = randLevel();
     // Grab a random time to wait
     //!TODO TIMINGS
-    int waitTime = randThread() % 1000;
+    //int waitTime = randThread() % 1000;
 
 
     // print car details
@@ -223,7 +223,7 @@ void *carThread(void *shmCar){
 
 
     // Access the levels LPR sensor
-    lpr_sensor_t *lpr = &shm->entrance[level].lpr_sensor;
+    lpr_sensor_t *lpr = &shm->entrance[level-1].lpr_sensor;
 
     // Lock the LPR mutex
     //pthread_mutex_lock(&lpr->mutex);
@@ -235,62 +235,63 @@ void *carThread(void *shmCar){
     //pthread_cond_broadcast(&lpr->cond);
     // Signal the LPR sensor
 
+
     pthread_cond_signal(&lpr->cond);
     // broadcast the condition variable
-    pthread_cond_broadcast(&lpr->cond);
+    //pthread_cond_broadcast(&lpr->cond);
 
     //pthread_mutex_unlock(&lpr->mutex);
 
     // TO THIS POINT
 
     // Wait for the info sign to say the car can enter
-    information_sign_t *info = &shm->entrance[level].information_sign;
-    pthread_cond_wait(&info->cond, &info->mutex);
+    // information_sign_t *info = &shm->entrance[level].information_sign;
+    // pthread_cond_wait(&info->cond, &info->mutex);
 
 
-    // If the car is rejected by the car park or full 
-    if (info->display == 'F' || info->display == 'X'){
-        // Print the rejection message
-        printf("%s has been rejected\n", LicensePlate);
-        // Unlock the mutex
-        pthread_mutex_unlock(&info->mutex);
-        // Exit the thread
-        pthread_exit(NULL);
-    }
+    // // If the car is rejected by the car park or full 
+    // if (info->display == 'F' || info->display == 'X'){
+    //     // Print the rejection message
+    //     printf("%s has been rejected\n", LicensePlate);
+    //     // Unlock the mutex
+    //     pthread_mutex_unlock(&info->mutex);
+    //     // Exit the thread
+    //     pthread_exit(NULL);
+    // }
 
-    // Check if the information sign gave an integer
-    if (info->display == '1' || info->display == '2' || info->display == '3' || info->display == '4' || info->display == '5'){
-        // Print the acceptance message
-        printf("%s heading to level ", LicensePlate);
+    // // Check if the information sign gave an integer
+    // if (info->display == '1' || info->display == '2' || info->display == '3' || info->display == '4' || info->display == '5'){
+    //     // Print the acceptance message
+    //     printf("%s heading to level ", LicensePlate);
 
-        // Simulate boom gate to open
-        usleep(10 * MS_IN_MICROSECONDS);
+    //     // Simulate boom gate to open
+    //     usleep(10 * MS_IN_MICROSECONDS);
 
 
-        // Trigger level LPR 
-        //lpr_sensor_t *levelLpr = &shm->level[info->display - '0' - 1].lpr_sensor;
-        //int level = atoi(info->display);
-        // Unlock the mutex
-        pthread_mutex_unlock(&info->mutex);
+    //     // Trigger level LPR 
+    //     //lpr_sensor_t *levelLpr = &shm->level[info->display - '0' - 1].lpr_sensor;
+    //     //int level = atoi(info->display);
+    //     // Unlock the mutex
+    //     pthread_mutex_unlock(&info->mutex);
 
-        usleep(waitTime * MS_IN_MICROSECONDS);
-        printf("Car is leaving the car park\n");
-        //Trigger exit LPR
-        lpr_sensor_t *exitLPR = &shm->exit[exitLevel].lpr_sensor;
-        memcpy(exitLPR->plate, LicensePlate, sizeof(LicensePlate));
+    //     usleep(waitTime * MS_IN_MICROSECONDS);
+    //     printf("Car is leaving the car park\n");
+    //     //Trigger exit LPR
+    //     lpr_sensor_t *exitLPR = &shm->exit[exitLevel].lpr_sensor;
+    //     memcpy(exitLPR->plate, LicensePlate, sizeof(LicensePlate));
 
-        // Exit the thread
-        pthread_exit(NULL);
-    }
+    //     // Exit the thread
+    //     pthread_exit(NULL);
+    // }
 
-    else {
-        // Print the rejection message
-        printf("NOT A VALID CHARACTER");
-        // Unlock the mutex
-        pthread_mutex_unlock(&info->mutex);
-        // Exit the thread
-        pthread_exit(NULL);
-    }
+    // else {
+    //     // Print the rejection message
+    //     printf("NOT A VALID CHARACTER");
+    //     // Unlock the mutex
+    //     pthread_mutex_unlock(&info->mutex);
+    //     // Exit the thread
+    //     pthread_exit(NULL);
+    // }
 
 
 
