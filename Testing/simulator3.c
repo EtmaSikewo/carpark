@@ -219,11 +219,11 @@ void *carThread(void *shmCar){
 
 
     // print car details
-    printf("%s has arrived at entrance %d\n", LicensePlate, level+1);
+    printf("%s has arrived at entrance %d\n", LicensePlate, level);
 
 
     // Access the levels LPR sensor
-    lpr_sensor_t *lpr = &shm->entrance[level-1].lpr_sensor;
+    lpr_sensor_t *lpr = &shm->entrance[level].lpr_sensor;
 
     // Lock the LPR mutex
     //pthread_mutex_lock(&lpr->mutex);
