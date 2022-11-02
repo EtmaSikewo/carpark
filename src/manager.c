@@ -40,7 +40,7 @@ void *lprEntranceHandler(void *arg)
         pthread_cond_wait(&lpr->cond, &lpr->mutex);
         pthread_mutex_unlock(&lpr->mutex);
         printf("Condition met at entrance %d\n", gate);
-
+        
 
         // // Set info sign to 4
         // pthread_mutex_lock(&shm.data->entrance[gate].information_sign.mutex);
