@@ -1,15 +1,16 @@
 # carpark
 
 
-Check == attempted
-✅ == complete
+Check == attempted  
+✅ == complete  
+~~cancelled~~
 
 # Simulator
  -  Intalise memory (Check)
  -  Init other mutex (TODO)
  -  Generate a car 1-100ms (Check)
  -  Car logic (TODO)
-    - Add car queue (TODO)
+    - ~~Add car queue (TODO)~~
     - Send car to entrance boom gate (Check)
     - Send license to LPR (Check)
     - Wait for manager to display info sign (TODO)
