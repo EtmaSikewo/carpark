@@ -219,7 +219,7 @@ void *carThread(void *shmCar){
 
 
     // print car details
-    printf("%s has arrived at entrance %d\n", LicensePlate, level);
+    printf("%s has arrived at entrance %d\n", LicensePlate, level+1);
 
     
     // Access the levels LPR sensor
@@ -228,8 +228,8 @@ void *carThread(void *shmCar){
     // Lock the LPR mutex
     //pthread_mutex_lock(&lpr->mutex);
 
-    //memcpy(lpr->plate, LicensePlate, sizeof(LicensePlate));
-    strcpy(lpr->plate, LicensePlate);
+    memcpy(lpr->plate, LicensePlate, sizeof(LicensePlate));
+    //strcpy(lpr->plate, LicensePlate);
 
     // Broadcast the condition variable
     //pthread_cond_broadcast(&lpr->cond);
@@ -307,7 +307,7 @@ void *generateCar(void *shm ){
     printf("Generating cars\n");
     // Setting the maxmium amount of spawned cars before queue implementation!!!
     //!TODO: Implement queue
-    int maximumCars = 2;
+    int maximumCars = 5;
     pthread_t cars[maximumCars];
     for (int i = 0; i < maximumCars; i++){
         pthread_create(&cars[i], NULL, carThread, shm);

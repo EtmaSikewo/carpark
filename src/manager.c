@@ -1,5 +1,6 @@
 #include <stdio.h>
-#include<stdlib.h>
+#include <stdlib.h>
+#include <string.h>
 // #include <time.h>
 // #include <pthread.h>
 // #include <sys/mman.h>
@@ -36,10 +37,8 @@ void *lprEntranceHandler(void *arg)
     for (;;){
         // Wait for condition
         pthread_mutex_lock(&lpr->mutex);
-        printf("Waiting for condition at gate %d\n", gate);
         pthread_cond_wait(&lpr->cond, &lpr->mutex);
         pthread_mutex_unlock(&lpr->mutex);
-        printf("Condition met at entrance %d\n", gate);
         
 
         // // Set info sign to 4
@@ -116,13 +115,17 @@ void display(shared_memory_t shm){
         printf("Status of the LPR sensors\n");
         printf("Entrances           Exits           Level\n");
         for(int i = 0; i < ENTRANCES; i++){
-            printf("%d: %s                %d: %s                %d: %s\n", i+1, shm.data->entrance[i].lpr_sensor.plate, i+1, shm.data->exit[i].lpr_sensor.plate, i+1, shm.data->level[i].lpr_sensor.plate);
+            if (strcmp(shm.data->entrance[i].lpr_sensor.plate, "") == 0){
+                printf("%d: %s\t\t%d: %s\t\t%d: %s\n", i+1, shm.data->entrance[i].lpr_sensor.plate, i+1, shm.data->exit[i].lpr_sensor.plate, i+1, shm.data->level[i].lpr_sensor.plate);
+            } else {
+                printf("%d: %s\t%d: %s\t\t%d: %s\n", i+1, shm.data->entrance[i].lpr_sensor.plate, i+1, shm.data->exit[i].lpr_sensor.plate, i+1, shm.data->level[i].lpr_sensor.plate);
+            }
         }
-        // printf("\n");
-        // //Print the status of the information signs
+        //printf("\n");
+        //Print the status of the information signs
         // printf("Status of the information signs\n");
         // for(int i = 0; i < ENTRANCES; i++){
-        //     printf("%d: %c  ", i+1, shm.data->entrance[i].info_sign.status);
+        //     printf("%d: %c  ", i+1, shm.data->entrance[i].information_sign.display);
         // }
         // printf("\n");
         // //Print the level information
@@ -131,7 +134,7 @@ void display(shared_memory_t shm){
         //     printf("level %d: %d/%d\n", i+1, shm.data->level[i].currLevelCapacity, PARKING_CAPACITY);
         // }
         printf("\n");
-        usleep(5 * MS_IN_MICROSECONDS);
+        usleep(1000 * MS_IN_MICROSECONDS);
 
 
     }
@@ -175,7 +178,7 @@ int main(void)
 
     
     for (;;){
-        //display(shm);
+        display(shm);
 
     }
    
