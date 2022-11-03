@@ -131,7 +131,7 @@ void display(shared_memory_t shm){
         //     printf("level %d: %d/%d\n", i+1, shm.data->level[i].currLevelCapacity, PARKING_CAPACITY);
         // }
         printf("\n");
-        usleep(5 * MS_IN_MICROSECONDS);
+        usleep(2000 * MS_IN_MICROSECONDS);
 
 
     }
@@ -175,7 +175,7 @@ int main(void)
 
     
     for (;;){
-        //display(shm);
+        display(shm);
 
     }
    

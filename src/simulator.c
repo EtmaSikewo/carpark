@@ -228,8 +228,8 @@ void *carThread(void *shmCar){
     // Lock the LPR mutex
     //pthread_mutex_lock(&lpr->mutex);
 
-    //memcpy(lpr->plate, LicensePlate, sizeof(LicensePlate));
-    strcpy(lpr->plate, LicensePlate);
+    memcpy(lpr->plate, LicensePlate, sizeof(LicensePlate));
+    // strcpy(lpr->plate, LicensePlate);
 
     // Broadcast the condition variable
     //pthread_cond_broadcast(&lpr->cond);
