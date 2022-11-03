@@ -60,13 +60,16 @@ src/shared_mem_create.c
 # custom ingores
 ##########################################
 .vscode/*
-testing
 
 
 # build files
-manager
-simulator
-firealarm
+src/manager
+src/simulator
+src/firealarm
+src/manager.o
+src/simulat.o
+src/firealarm.o
+*.o
 
 
 ##########################################
