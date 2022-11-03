@@ -12,6 +12,8 @@
 #define MS_IN_MICROSECONDS 1000
 #define QueueSize 100
 
+#define platesDir "../data/plates.txt"
+
 // variables for car queue
 pthread_mutex_t queueEntry;
 pthread_mutex_t queueExit;
@@ -178,7 +180,7 @@ void boomGateSimualtor(void *arg){
 char *getPlate(){
     // Allocate memory for the plate
     char *plate = malloc(6);
-    FILE *fp = fopen("plates.txt", "r");
+    FILE *fp = fopen(platesDir, "r");
     // Error check the file
     if (fp == NULL){
         printf("Error opening file");
