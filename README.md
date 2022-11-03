@@ -1,9 +1,8 @@
 # carpark
 
-i should have added a src folder - Ethan
-
 
 Check == attempted
+✅ == complete
 
 # Simulator
  -  Intalise memory (Check)
