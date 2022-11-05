@@ -122,12 +122,12 @@ void *boomgateInit(void *arg){
     // Unlock the mutex
     pthread_mutex_unlock(&boom_gate->mutex);
     return NULL;
-
+    pthread_exit(NULL);
 }
 
 // Function that will be called by the boom gate thread
 // ---------------------------------------------
-void boomGateSimualtor(void *arg){
+void *boomGateSimualtor(void *arg){
     // Get the boom gate thread
     boom_gate_t *boom_gate = arg;
     // Lock the boomgate mutex for use
@@ -156,6 +156,7 @@ void boomGateSimualtor(void *arg){
         // Broadcast the change to the boom gate
         pthread_cond_broadcast(&boom_gate->cond);
         //Print the boom gate status
+        usleep(20 * MS_IN_MICROSECONDS);
     }
     // If the boom gate is set to closed
     else if (boom_gate->status == 'C'){
@@ -165,10 +166,14 @@ void boomGateSimualtor(void *arg){
     else{
         //Print the boom gate status
         printf("Boom gate is in an illegal state");
+        pthread_exit(NULL);
     }
     // Unlock the boom gate mutex
     pthread_mutex_unlock(&boom_gate->mutex);
 
+    // Exit the thread
+    return NULL;
+    pthread_exit(NULL);
 }
 
 // ---------------------------------------------
@@ -200,21 +205,24 @@ int sendCarToLevel(int8_t entranceLevel, char grantedLevel, char *LicensePlate, 
 
     // Simulate boom gate to open
     // TODO: Make this a function
+    // Lock the boom gate mutex
+    pthread_mutex_lock(&shm->entrance[entranceLevel].boom_gate.mutex);
+
     shm->entrance[entranceLevel].boom_gate.status = 'R';
-    printf("Boom gate raised on %d\n", entranceLevel+1);
+    printf("Boom gate raised on entrance %d\n", entranceLevel+1);
 
     // Wait to open boom gate
     pthread_cond_wait(&shm->entrance[entranceLevel].boom_gate.cond, &shm->entrance[entranceLevel].boom_gate.mutex);
 
 
-    printf("Boom gate closed on %d\n", entranceLevel+1);
+    printf("Boom gate closed on entrance %d\n", entranceLevel+1);
     shm->entrance[entranceLevel].boom_gate.status = 'L';
 
     // Wait to close
 
     printf("%s heading to level: %c\n", LicensePlate, grantedLevel);
 
-    
+    pthread_mutex_unlock(&shm->entrance[entranceLevel].boom_gate.mutex);
     return 1;
 }
 
@@ -222,15 +230,21 @@ int sendCarToExit(int8_t exitLevel, char *LicensePlate, shared_memory_data_t *sh
 
     // Simulate boom gate to open
     // TODO: Make this a function
+    pthread_mutex_lock(&shm->exit[exitLevel].boom_gate.mutex);
     shm->exit[exitLevel].boom_gate.status = 'R';
-    printf("Boom gate raised on %d\n", exitLevel+1);
+    printf("Boom gate raised on exit %d\n", exitLevel+1);
 
     // Wait to open boom gate
     pthread_cond_wait(&shm->exit[exitLevel].boom_gate.cond, &shm->exit[exitLevel].boom_gate.mutex);
 
 
-    printf("Boom gate closed on %d\n", exitLevel+1);
+    printf("Boom gate closed on exit %d\n", exitLevel+1);
     shm->exit[exitLevel].boom_gate.status = 'L';
+
+    pthread_mutex_unlock(&shm->exit[exitLevel].boom_gate.mutex);
+
+    //send signal to exitLPR handler to minus one from the capacity
+    pthread_cond_signal(&shm->exit[exitLevel].lpr_sensor.cond);
 
     return 1;
 }
@@ -252,7 +266,7 @@ void *carThread(void *shmCar){
     int exitLevel = randLevel();
     // Grab a random time to wait
     //!TODO TIMINGS
-    int waitTime = randThread() % 50;
+    int waitTime = randThread() % 2000;
 
 
     // print car details
@@ -301,9 +315,7 @@ void *carThread(void *shmCar){
 
     pthread_mutex_unlock(&info->mutex);
 
-
     sendCarToLevel(level, info->display, lpr->plate, shm);
-
     
     
     //!TODO TIMINGS
@@ -320,51 +332,9 @@ void *carThread(void *shmCar){
     memcpy(exitLPR->plate, LicensePlate, 6);
 
     sendCarToExit(exitLevel, lpr->plate, shm);
-
-
-    // // Check if the information sign gave an integer
-    // if (info->display == '1' || info->display == '2' || info->display == '3' || info->display == '4' || info->display == '5'){
-    //     // Print the acceptance message
-    //     printf("%s heading to level\n", LicensePlate);
-
-    //     // Simulate boom gate to open
-    //     shm->entrance[3].boom_gate.status = 'R';
-    //     usleep(10 * MS_IN_MICROSECONDS);
-    //     shm->entrance[3].boom_gate.status = 'L';
-        
-
-
-
-    //     // Trigger level LPR 
-    //     //lpr_sensor_t *levelLpr = &shm->level[info->display - '0' - 1].lpr_sensor;
-    //     //int level = atoi(info->display);
-    //     // Unlock the mutex
-    //     pthread_mutex_unlock(&info->mutex);
-
-    //     usleep(2000 * MS_IN_MICROSECONDS);
-    //     printf("Car is leaving the car park\n");
-    //     //Trigger exit LPR
-    //     lpr_sensor_t *exitLPR = &shm->exit[4].lpr_sensor;
-    //     memcpy(exitLPR->plate, LicensePlate, sizeof(LicensePlate));
-
-    //     // Exit the thread
-    //     pthread_exit(NULL);
-    // }
-
-    // else {
-    //     // Print the rejection message
-    //     printf("NOT A VALID CHARACTER");
-    //     // Unlock the mutex
-    //     pthread_mutex_unlock(&info->mutex);
-    //     // Exit the thread
-    //     pthread_exit(NULL);
-    // }
-
-
+    
 
     return NULL;
-
-    
 }
 
 // Generate a car every 1-100ms 
@@ -378,7 +348,7 @@ void *generateCar(void *shm ){
     pthread_t cars[maximumCars];
     for (int i = 0; i < maximumCars; i++){
         pthread_create(&cars[i], NULL, carThread, shm);
-        int time = (randThread() % (100 - 1 + 1)) + 1; // create random wait time between 1-100ms
+        int time = (randThread() % (1000 - 1 + 1)) + 1; // create random wait time between 1-100ms
         
         usleep(time*MS_IN_MICROSECONDS);
     }
@@ -509,12 +479,10 @@ int main(void)
             if (bg->status == 'R'){
                 pthread_t boomgatethread;
                 pthread_create(&boomgatethread, NULL,(void *(*)(void *))boomGateSimualtor, (void *) bg);
-                //pthread_join(boomgatethread, NULL);
             }
             else if (bg->status == 'L'){
                 pthread_t boomgatethread;
                 pthread_create(&boomgatethread, NULL,(void *(*)(void *))boomGateSimualtor, (void *) bg);
-                //pthread_join(boomgatethread, NULL);
             }
         }
 

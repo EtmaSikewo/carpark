@@ -105,56 +105,55 @@ void *lprEntranceHandler(void *arg)
             pthread_cond_signal(&shm.data->entrance[gate].information_sign.cond);
         }
         else {
- 
-        for(;;){
-            // Pick a random level to park on 
-            int levelToPark = randThread() % LEVELS;
-            
-            // Check if parking is available
-            if(check_parking_availability(levelToPark)){
-                // Remove one from parking
-                parking[levelToPark] = parking[levelToPark] - 1;
-                // Make char of level 
-                //char level_char = level + '0';
+            for(;;){
+                // Pick a random level to park on 
+                int levelToPark = randThread() % LEVELS;
+                
+                // Check if parking is available
+                if(check_parking_availability(levelToPark)){
+                    // Remove one from parking
+                    parking[levelToPark] = parking[levelToPark] - 1;
+                    // Make char of level 
+                    //char level_char = level + '0';
 
-                    // print the level 
+                        // print the level 
 
-                // Level 0, level 1, level 2, level 3, level 4
-                // level+1 
+                    // Level 0, level 1, level 2, level 3, level 4
+                    // level+1 
 
-                if (levelToPark == 0) {
-                    strcpy(&shm.data->entrance[gate].information_sign.display, "1");
-                    pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
-                    // print the level 
-                    break;
-                }
-                else if (levelToPark == 1) {
-                    strcpy(&shm.data->entrance[gate].information_sign.display, "2");
-                    pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
-                                        // print the level 
-                    break;
-                }
-                else if (levelToPark == 2) {
-                    strcpy(&shm.data->entrance[gate].information_sign.display, "3");
-                    pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
-                                        // print the level 
+                    if (levelToPark == 0) {
+                        strcpy(&shm.data->entrance[gate].information_sign.display, "1");
+                        pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
+                        // print the level 
+                        break;
+                    }
+                    else if (levelToPark == 1) {
+                        strcpy(&shm.data->entrance[gate].information_sign.display, "2");
+                        pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
+                                            // print the level 
+                        break;
+                    }
+                    else if (levelToPark == 2) {
+                        strcpy(&shm.data->entrance[gate].information_sign.display, "3");
+                        pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
+                                            // print the level 
 
-                    break;
-                }
-                else if (levelToPark == 3) {
-                    strcpy(&shm.data->entrance[gate].information_sign.display, "4");
-                    pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
-                                        // print the level 
-                    break;
-                }
-                else if (levelToPark == 4) {
-                    strcpy(&shm.data->entrance[gate].information_sign.display, "5");
-                    pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
-                                        // print the level 
-                    break;
+                        break;
+                    }
+                    else if (levelToPark == 3) {
+                        strcpy(&shm.data->entrance[gate].information_sign.display, "4");
+                        pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
+                                            // print the level 
+                        break;
+                    }
+                    else if (levelToPark == 4) {
+                        strcpy(&shm.data->entrance[gate].information_sign.display, "5");
+                        pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
+                                            // print the level 
+                        break;
+                    }
                 }
             }
-        }
         }
 
         
@@ -163,24 +162,31 @@ void *lprEntranceHandler(void *arg)
         pthread_cond_signal(&shm.data->entrance[gate].information_sign.cond);
 
     }
-    
-    // for(;;){
-    //     pthread_mutex_lock(&lpr->mutex);
-    //     //pthread_cond_wait(&lpr->cond, &lpr->mutex);
-    //     //printf("Found: %s\n", lpr->plate);
-    //     pthread_mutex_unlock(&lpr->mutex);
-    //     //pthread_mutex_lock(&information_sign->mutex);
-        
-    //     //pthread_cond_signal(&information_sign->cond);
-    //     //pthread_mutex_unlock(&information_sign->mutex);
-
-    // }
 
     return NULL;
     
 }
 
+void *lprExitHandler(void *arg) {
 
+    gate_data_t *gate_data = arg;
+    shared_memory_t shm = gate_data->shm;
+    int gate = gate_data->gate;
+
+    lpr_sensor_t *lpr = &shm.data->exit[gate].lpr_sensor;
+    
+    //TODO: THIS IS BROKEN
+    for (;;){
+        // Wait for condition
+        pthread_mutex_lock(&lpr->mutex);
+        pthread_cond_wait(&lpr->cond, &lpr->mutex);
+        
+        parking[gate] = parking[gate] + 1;
+        pthread_mutex_unlock(&lpr->mutex);
+    }
+
+    return NULL; 
+}
 
 
 void display(shared_memory_t shm){     
@@ -252,8 +258,6 @@ void display(shared_memory_t shm){
 
         printf("\n");
         usleep(50 * MS_IN_MICROSECONDS);
-
-
     }
 
 
@@ -285,14 +289,16 @@ int main(void)
 
     // Thread for the entranceLPRSensors
     pthread_t lprThreadEntrances[ENTRANCES]; 
+    pthread_t lprThreadExits[EXITS]; 
 
     // LPR memory 
     //Create a thead for each Entrance LPR
     for (int i = 0; i < ENTRANCES; i++){
         pthread_create(&lprThreadEntrances[i], NULL, lprEntranceHandler, (void *) (&entranceData[i]));
     }
-    
-    
+    for (int i = 0; i < EXITS; i++){
+        pthread_create(&lprThreadExits[i], NULL, lprExitHandler, (void *) (&entranceData[i]));
+    }
 
     
     for (;;){
