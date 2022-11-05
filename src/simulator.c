@@ -12,8 +12,8 @@
 #define MS_IN_MICROSECONDS 1000
 #define QueueSize 100
 
-#define LICENCE_PLATE_DIR "../data/plates.txt"
 #define LICENCE_PLATE_SIZE 6
+#define LICENCE_PLATE_DIR "../data/plates.txt"
 
 #define DEBUG 1
 
@@ -230,6 +230,24 @@ int sendCarToLevel(int8_t entranceLevel, char grantedLevel,
     return 1;
 }
 
+void ActivateLPR(int destinationLevel, char *licencePlate, shared_memory_data_t *p_shm)
+{
+    lpr_sensor_t *p_lpr = &p_shm->entrance[destinationLevel].lpr_sensor;
+    memcpy(p_lpr->plate, licencePlate, LICENCE_PLATE_SIZE);
+    pthread_cond_signal(&p_lpr->cond);
+}
+
+void WaitForLPRorGate(int destinationLevel, shared_memory_data_t *p_shm)
+{
+    lpr_sensor_t *p_lpr = &p_shm->entrance[destinationLevel].lpr_sensor;
+    information_sign_t *p_info = &p_shm->entrance[destinationLevel].information_sign;
+
+    // wait for LPR or gate to be free
+    pthread_cond_wait(&p_info->cond, &p_info->mutex);
+    printf("%s has been granted access to level %c\n", p_lpr->plate,
+           p_shm->entrance[destinationLevel].information_sign.display + 1);
+}
+
 /**
  * @brief Car thread - generates a car and sends it to an entrance
  * In these steps:
@@ -244,7 +262,7 @@ int sendCarToLevel(int8_t entranceLevel, char grantedLevel,
  */
 void *carThread(void *shmCar)
 {
-    shared_memory_data_t *p_SHM = shmCar;
+    shared_memory_data_t *p_shm = shmCar;
 
     //* step 1 - generate a random number plate
     char *plate = GenerateLicencePlate();
@@ -259,20 +277,15 @@ void *carThread(void *shmCar)
 
     //* step 3 - send the car to the entrance (activate the level LPR)
     // Access the levels LPR sensor
-    lpr_sensor_t *p_LPR = &p_SHM->entrance[destinationLevel].lpr_sensor;
-
-    memcpy(p_LPR->plate, licencePlate, sizeof(licencePlate));
-
-    pthread_cond_signal(&p_LPR->cond);
+    ActivateLPR(destinationLevel, licencePlate, p_shm);
 
     //* step 4 - wait for LPR to choose a level
-    information_sign_t *info = &p_SHM->entrance[destinationLevel].information_sign;
-    pthread_cond_wait(&info->cond, &info->mutex);
-    printf("%s has been granted access to level %c\n", p_LPR->plate,
-           p_SHM->entrance[destinationLevel].information_sign.display + 1);
+    WaitForLPRorGate(destinationLevel, p_shm);
 
     //* step 5 - send the car through the boom gate
-    sendCarToLevel(destinationLevel, info->display, p_LPR->plate, p_SHM);
+    sendCarToLevel(destinationLevel,
+                   p_shm->entrance[destinationLevel].information_sign.display,
+                   p_shm->entrance->lpr_sensor.plate, p_shm);
     return NULL;
 }
 
