@@ -266,7 +266,7 @@ void *carThread(void *shmCar){
     int exitLevel = randLevel();
     // Grab a random time to wait
     //!TODO TIMINGS
-    int waitTime = randThread() % 2000;
+    int waitTime = randThread() % 10000 + 100;
 
 
     // print car details
