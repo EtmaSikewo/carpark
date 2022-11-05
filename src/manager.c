@@ -208,13 +208,21 @@ void display(shared_memory_t shm)
 
 int main(void)
 {
+
     srand(time(0));
     setupParking();
+    // // Sleep for abit
+    // usleep(2000 * MS_IN_MICROSECONDS);
 
     //  create the shared memory segment
     shared_memory_t shm;
-    // TODO error handle this
-    get_shared_object(&shm, "PARKING");
+    get_shared_object(&shm, "PARKING"); // Need to error handle this
+
+    // Structure to hold the entrance number and the shared memory
+    // struct entranceNumAndShm{
+    //     int entranceNum;
+    //     shared_memory_t shm;
+    // };
 
     gate_data_t entranceData[ENTRANCES];
     for (int i = 0; i < ENTRANCES; i++)

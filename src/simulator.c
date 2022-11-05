@@ -84,6 +84,10 @@ void ActivateLPR(int destLevel, char licencePlate[LICENCE_PLATE_SIZE], shared_me
     lpr_sensor_t *p_lpr = &p_shm->entrance[destLevel].lpr_sensor;
     memcpy(p_lpr->plate, licencePlate, LICENCE_PLATE_SIZE);
     pthread_cond_signal(&p_lpr->cond);
+
+    if (DEBUG)
+        printf("%s has arrived at entrance %d\n", p_lpr->plate,
+               destLevel);
 }
 
 /**
@@ -244,7 +248,7 @@ void boomGateSimualtor(void *arg)
 char *GenerateLicencePlate()
 {
     // Allocate memory for the plate
-    char *plate = malloc(LICENCE_PLATE_SIZE);
+    char *plate = malloc(6);
     FILE *fp = fopen(LICENCE_PLATE_DIR, "r");
     // Error check the file
     if (fp == NULL)
@@ -256,32 +260,29 @@ char *GenerateLicencePlate()
     // printf("Line: %d\n", randomPlateLine);
     for (int i = 0; i < randomPlateLine; i++)
     {
-        fgets(plate, LICENCE_PLATE_SIZE + 1, fp);
+        fgets(plate, sizeof(plate) + 1, fp);
     }
     fclose(fp);
     return plate;
 }
 
 /**
- * @brief Sends a car to the desired level
+ * @brief Sends a car to the desired level.
  *
  * @param entranceLevel
- * @param grantedLevel
- * @param LicensePlate
  * @param shm
- * @return int
  */
-int sendCarToLevel(int8_t entranceLevel, char grantedLevel,
-                   char *LicensePlate, shared_memory_data_t *p_shm)
+void sendCarToLevel(int8_t destLevel, shared_memory_data_t *p_shm)
 {
-    // Simulate boom gate to open
-    boom_gate_t *p_boom = &p_shm->entrance[entranceLevel].boom_gate;
-    pthread_mutex_lock(&p_boom->mutex);
-    ActivateBoomGate(entranceLevel, p_boom);
-    printf("%s heading to level: %c\n", LicensePlate, grantedLevel + 1);
-    pthread_mutex_unlock(&p_boom->mutex);
+    information_sign_t *p_info = &p_shm->entrance[destLevel].information_sign;
+    lpr_sensor_t *p_lpr = &p_shm->entrance->lpr_sensor;
 
-    return 1;
+    // Simulate boom gate to open
+    boom_gate_t *p_boom = &p_shm->entrance[destLevel].boom_gate;
+    pthread_mutex_lock(&p_boom->mutex);
+    ActivateBoomGate(destLevel, p_boom);
+    printf("%s heading to level: %c\n", p_lpr->plate, p_info->display + 1);
+    pthread_mutex_unlock(&p_boom->mutex);
 }
 
 /**
@@ -310,23 +311,16 @@ void *carThread(void *shmCar)
     int destLevel = GetRandLevel();
     int exitLevel = GetRandLevel();
     int waitTime = randThread() % 2000;
-    if (DEBUG)
-        printf("%s has arrived at entrance %d\n", p_shm->entrance[destLevel].lpr_sensor.plate,
-               destLevel);
 
     //* step 3 - send the car to the entrance (activate the level LPR)
     // Access the entrance LPR sensor
-    lpr_sensor_t *p_lpr = &p_shm->entrance[destLevel].lpr_sensor;
-    memcpy(p_lpr->plate, licencePlate, LICENCE_PLATE_SIZE);
-    pthread_cond_signal(&p_lpr->cond);
+    ActivateLPR(destLevel, licencePlate, p_shm);
 
     //* step 4 - wait for LPR to choose a level
     WaitForLPRorGate(destLevel, p_shm);
 
     //* step 5 - send the car through the boom gate
-    sendCarToLevel(destLevel,
-                   p_shm->entrance[destLevel].information_sign.display,
-                   p_shm->entrance->lpr_sensor.plate, p_shm);
+    sendCarToLevel(destLevel, p_shm);
 
     // level LPR
     lpr_sensor_t *p_level_lpr = &p_shm->level[destLevel].lpr_sensor;
