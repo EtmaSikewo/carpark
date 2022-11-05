@@ -102,23 +102,14 @@ void *lprEntranceHandler(void *arg)
             //shm.data->entrance[gate].information_sign.display = 'F';
             strcpy(&shm.data->entrance[gate].information_sign.display, "F");
             pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
-            return NULL;
+            pthread_cond_signal(&shm.data->entrance[gate].information_sign.cond);
         }
         else {
  
         for(;;){
             // Pick a random level to park on 
             int levelToPark = randThread() % LEVELS;
-            printf("Super Duper genertaed level: %d\n", levelToPark);
             
-
-
-            // Check parking availability for every level
-            for (int i = 0; i < 5; i++){
-                int CanPark = check_parking_availability(i);
-                printf("CanPark: %d\n", CanPark);
-            }
-
             // Check if parking is available
             if(check_parking_availability(levelToPark)){
                 // Remove one from parking
@@ -127,7 +118,6 @@ void *lprEntranceHandler(void *arg)
                 //char level_char = level + '0';
 
                     // print the level 
-                    printf("Generated level : %d\n", levelToPark);
 
                 // Level 0, level 1, level 2, level 3, level 4
                 // level+1 
@@ -136,21 +126,18 @@ void *lprEntranceHandler(void *arg)
                     strcpy(&shm.data->entrance[gate].information_sign.display, "1");
                     pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
                     // print the level 
-                    printf("Level 0 chosen: %d\n", levelToPark);
                     break;
                 }
                 else if (levelToPark == 1) {
                     strcpy(&shm.data->entrance[gate].information_sign.display, "2");
                     pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
                                         // print the level 
-                    printf("Level 1 chosen: %d\n", levelToPark);
                     break;
                 }
                 else if (levelToPark == 2) {
                     strcpy(&shm.data->entrance[gate].information_sign.display, "3");
                     pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
                                         // print the level 
-                    printf("Level 2 chosen: %d\n", levelToPark);
 
                     break;
                 }
@@ -158,14 +145,12 @@ void *lprEntranceHandler(void *arg)
                     strcpy(&shm.data->entrance[gate].information_sign.display, "4");
                     pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
                                         // print the level 
-                    printf("Level 3 chosen: %d\n", levelToPark);
                     break;
                 }
                 else if (levelToPark == 4) {
                     strcpy(&shm.data->entrance[gate].information_sign.display, "5");
                     pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
                                         // print the level 
-                    printf("Level 4 chosen: %d\n", levelToPark);
                     break;
                 }
             }
@@ -251,17 +236,20 @@ void display(shared_memory_t shm){
             }
         }
         printf("\n");
+        
         //Print the status of the information signs
         printf("Status of the information signs\n");
         for(int i = 0; i < ENTRANCES; i++){
-            printf("%d: %c  ", i+1, shm.data->entrance[i].information_sign.display+1);
+            printf("%d: %c  ", i+1, shm.data->entrance[i].information_sign.display);
         }
-        // printf("\n");
-        // //Print the level information
-        // printf("Level information\n");
-        // for(int i = 0; i < LEVELS; i++){
-        //     printf("level %d: %d/%d\n", i+1, shm.data->level[i].currLevelCapacity, PARKING_CAPACITY);
-        // }
+        printf(" \n\n");
+
+        // Print the parking information
+        printf("Level information\n");
+        for(int i = 0; i < LEVELS; i++){
+            printf("level %d: %d/%d\n", i+1, abs(parking[i]-PARKING_CAPACITY), PARKING_CAPACITY);
+        }
+
         printf("\n");
         usleep(50 * MS_IN_MICROSECONDS);
 
@@ -308,7 +296,7 @@ int main(void)
 
     
     for (;;){
-        //display(shm);
+        display(shm);
 
     }
    

@@ -197,33 +197,41 @@ char *getPlate(){
 
     // Return 0 if failed, return 1 if success
 int sendCarToLevel(int8_t entranceLevel, char grantedLevel, char *LicensePlate, shared_memory_data_t *shm) {
-    if (grantedLevel < 0) {
-        printf("Display says X or F\n");
-        return 0;
-    }
+
     // Simulate boom gate to open
     // TODO: Make this a function
     shm->entrance[entranceLevel].boom_gate.status = 'R';
     printf("Boom gate raised on %d\n", entranceLevel+1);
+
+    // Wait to open boom gate
+    pthread_cond_wait(&shm->entrance[entranceLevel].boom_gate.cond, &shm->entrance[entranceLevel].boom_gate.mutex);
+
+
     printf("Boom gate closed on %d\n", entranceLevel+1);
     shm->entrance[entranceLevel].boom_gate.status = 'L';
 
-    printf("%s heading to level: %c\n", LicensePlate, grantedLevel+1);
+    // Wait to close
 
-    // Trigger level LPR 
-    //lpr_sensor_t *levelLpr = &shm->level[info->display - '0' - 1].lpr_sensor;
-    //int level = atoi(info->display);
-    // Unlock the mutex
-    //pthread_mutex_unlock(&info->mutex);
+    printf("%s heading to level: %c\n", LicensePlate, grantedLevel);
 
-    // usleep(20000 * MS_IN_MICROSECONDS);
-    // printf("%s is leaving through exit %d\n", LicensePlate, level+1);
-    // //Trigger exit LPR
-    // lpr_sensor_t *exitLPR = &shm->exit[level].lpr_sensor;
-    // memcpy(exitLPR->plate, LicensePlate, 6);
+    
+    return 1;
+}
 
-    // Exit the thread
-    pthread_exit(NULL);
+int sendCarToExit(int8_t exitLevel, char *LicensePlate, shared_memory_data_t *shm) {
+
+    // Simulate boom gate to open
+    // TODO: Make this a function
+    shm->exit[exitLevel].boom_gate.status = 'R';
+    printf("Boom gate raised on %d\n", exitLevel+1);
+
+    // Wait to open boom gate
+    pthread_cond_wait(&shm->exit[exitLevel].boom_gate.cond, &shm->exit[exitLevel].boom_gate.mutex);
+
+
+    printf("Boom gate closed on %d\n", exitLevel+1);
+    shm->exit[exitLevel].boom_gate.status = 'L';
+
     return 1;
 }
 
@@ -241,10 +249,10 @@ void *carThread(void *shmCar){
     // Grab a random level 
     int level = randLevel();
     // Grab a random exit level 
-    //int exitLevel = randLevel();
+    int exitLevel = randLevel();
     // Grab a random time to wait
     //!TODO TIMINGS
-    //int waitTime = randThread() % 1000;
+    int waitTime = randThread() % 50;
 
 
     // print car details
@@ -273,25 +281,46 @@ void *carThread(void *shmCar){
 
     // TO THIS POINT
 
+    
+
     //Wait for the info sign to say the car can enter
     information_sign_t *info = &shm->entrance[level].information_sign;
+    pthread_mutex_lock(&info->mutex);
     pthread_cond_wait(&info->cond, &info->mutex);
-    printf("%s has been granted access to level %c\n", lpr->plate, shm->entrance[level].information_sign.display+1);
 
+    if (strcmp(&info->display, "F") == 0 || strcmp(&info->display, "X") == 0 ) {
+        // Print the rejection message
+        printf("%s has been rejected\n", lpr->plate);
+        // Unlock the mutex
+        pthread_mutex_unlock(&info->mutex);
+        // Exit the thread
+        return NULL;
+    }
+    
+    printf("%s has been granted access to level %c\n", lpr->plate, shm->entrance[level].information_sign.display);
 
-    // // If the car is rejected by the car park or full 
-    // if (info->display == 'F' || info->display == 'X' || info->display == typeChar){
-    //     // Print the rejection message
-    //     printf("%s has been rejected\n", LicensePlate);
-    //     // Unlock the mutex
-    //     pthread_mutex_unlock(&info->mutex);
-    //     // Exit the thread
-    //     pthread_exit(NULL);
-    // }
-
+    pthread_mutex_unlock(&info->mutex);
 
 
     sendCarToLevel(level, info->display, lpr->plate, shm);
+
+    
+    
+    //!TODO TIMINGS
+    // trigger level LPR
+    lpr_sensor_t *levelLpr = &shm->level[level].lpr_sensor;
+    memcpy(levelLpr->plate, LicensePlate, 6);
+
+
+    // Leave car park after wait time
+    usleep(waitTime * MS_IN_MICROSECONDS);
+    printf("%s is leaving through exit %d\n", LicensePlate, exitLevel+1);
+    //Trigger exit LPR
+    lpr_sensor_t *exitLPR = &shm->exit[exitLevel].lpr_sensor;
+    memcpy(exitLPR->plate, LicensePlate, 6);
+
+    sendCarToExit(exitLevel, lpr->plate, shm);
+
 
     // // Check if the information sign gave an integer
     // if (info->display == '1' || info->display == '2' || info->display == '3' || info->display == '4' || info->display == '5'){
@@ -345,7 +374,7 @@ void *generateCar(void *shm ){
     printf("Generating cars\n");
     // Setting the maxmium amount of spawned cars before queue implementation!!!
     //!TODO: Implement queue
-    int maximumCars = 10;
+    int maximumCars = 5;
     pthread_t cars[maximumCars];
     for (int i = 0; i < maximumCars; i++){
         pthread_create(&cars[i], NULL, carThread, shm);
@@ -488,6 +517,23 @@ int main(void)
                 //pthread_join(boomgatethread, NULL);
             }
         }
+
+        for(int i = 0; i < EXITS; i++) {
+            boom_gate_t *bg = &shm.data->exit[i].boom_gate;
+
+            if (bg->status == 'R'){
+                pthread_t boomgatethread;
+                pthread_create(&boomgatethread, NULL,(void *(*)(void *))boomGateSimualtor, (void *) bg);
+                //pthread_join(boomgatethread, NULL);
+            }
+            else if (bg->status == 'L'){
+                pthread_t boomgatethread;
+                pthread_create(&boomgatethread, NULL,(void *(*)(void *))boomGateSimualtor, (void *) bg);
+                //pthread_join(boomgatethread, NULL);
+            }
+        }
+
+
 
 
         usleep(5 * MS_IN_MICROSECONDS);

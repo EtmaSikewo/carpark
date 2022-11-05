@@ -13,7 +13,7 @@ Check == attempted
     - ~~Add car queue (TODO)~~
     - Send car to entrance boom gate (Check)
     - Send license to LPR (Check)
-    - Wait for manager to display info sign (TODO)
+    - Wait for manager to display info sign (check)
     - Wait for boomgate to open (TODO)
     - Drive to level {Trigger Level LPR} (TODO)
     - Park to set time (TODO)
@@ -26,22 +26,22 @@ Check == attempted
 - Create LPR threads (Check)
     - Entrace LPR
         - Read plate of car (Check)
-        - Display parking level on info sign (TODO)
-        - open entrance boom gate   (TODO)
-        - close entrance boom gate  (TODO)
+        - Display parking level on info sign (Check)
+        - open entrance boom gate   (Check)
+        - close entrance boom gate  (Check)
     - Level LPR
         - BRR idk trigger parked    (TODO)
     - Exit LPR
-        - Reads plate   (TODO)
-        - Opens/Close boomgate(TODO)
+        - Reads plate   (Check)
+        - Opens/Close boomgate (Check)
         - Free the parking spot (TODO)
-        - Trigger billing(TODO)
+        - Trigger billing (TODO)
 - Hash table
     - Check validity of plate (TODO)
     - Reject invalid car    (TODO)
 - Manage carspaces 
-    - Send cars to free parking levels(TODO)
-    - Reject car if full (TODO)
+    - Send cars to free parking levels (Check)
+    - Reject car if full (Check)
 - Billing 
     - Charge for each car   (TODO)
     - Total revenue (TODO)
