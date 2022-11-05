@@ -79,7 +79,7 @@ int GetRandLevel(void)
  * @param licencePlate License plate of the car
  * @param p_shm Pointer to the shared memory
  */
-void ActivateLPR(int destLevel, char *licencePlate, shared_memory_data_t *p_shm)
+void ActivateLPR(int destLevel, char licencePlate[LICENCE_PLATE_SIZE], shared_memory_data_t *p_shm)
 {
     lpr_sensor_t *p_lpr = &p_shm->entrance[destLevel].lpr_sensor;
     memcpy(p_lpr->plate, licencePlate, LICENCE_PLATE_SIZE);
@@ -298,12 +298,14 @@ void *carThread(void *shmCar)
     //* step 2 - generate a random level number
     int destLevel = GetRandLevel();
     if (DEBUG)
-        printf("%s has arrived at entrance %d\n", licencePlate,
-               destLevel + 1);
+        printf("%s has arrived at entrance %d\n", p_shm->entrance[destLevel].lpr_sensor.plate,
+               destLevel);
 
     //* step 3 - send the car to the entrance (activate the level LPR)
     // Access the levels LPR sensor
-    ActivateLPR(destLevel, licencePlate, p_shm);
+    lpr_sensor_t *p_lpr = &p_shm->entrance[destLevel].lpr_sensor;
+    memcpy(p_lpr->plate, licencePlate, LICENCE_PLATE_SIZE);
+    pthread_cond_signal(&p_lpr->cond);
 
     //* step 4 - wait for LPR to choose a level
     WaitForLPRorGate(destLevel, p_shm);
@@ -324,7 +326,7 @@ void *carThread(void *shmCar)
 void *generateCar(void *shm)
 {
     // wait 10 seconds before starting to generate cars
-    usleep(10000 * MS_IN_MICROSECONDS);
+    usleep(6000 * 1000);
     printf("Generating cars\n");
     // Setting the maxmium amount of spawned cars before queue implementation!!!
     //! TODO: Implement queue
