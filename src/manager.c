@@ -228,25 +228,21 @@ void display(shared_memory_t shm){
         printf("Status of the boom gates\n");
         printf("Entrances           Exits\n");
         for(int i = 0; i < ENTRANCES; i++){
-            printf("%d: %c                %d: %c\n", i+1, shm.data->entrance[i].boom_gate.status, i+1, shm.data->exit[i].boom_gate.status);
+            printf("%d: %c\t\t%d: %c\n", i+1, shm.data->entrance[i].boom_gate.status, i+1, shm.data->exit[i].boom_gate.status);
         }
         printf("\n");
         //Print the status of the LPR sensors
         printf("Status of the LPR sensors\n");
-        printf("Entrances           Exits           Level\n");
+        printf("Entrances\tExits\t\tLevel\n");
         for(int i = 0; i < ENTRANCES; i++){
-            if (strcmp(shm.data->entrance[i].lpr_sensor.plate, "") == 0){
-                printf("%d: %s\t\t%d: %s\t\t%d: %s\n", i+1, shm.data->entrance[i].lpr_sensor.plate, i+1, shm.data->exit[i].lpr_sensor.plate, i+1, shm.data->level[i].lpr_sensor.plate);
-            } else {
-                printf("%d: %s\t%d: %s\t\t%d: %s\n", i+1, shm.data->entrance[i].lpr_sensor.plate, i+1, shm.data->exit[i].lpr_sensor.plate, i+1, shm.data->level[i].lpr_sensor.plate);
-            }
+            printf("%d: %-12s %d: %-12s %d: %-6s\n", i+1, shm.data->entrance[i].lpr_sensor.plate, i+1, shm.data->exit[i].lpr_sensor.plate, i+1, shm.data->level[i].lpr_sensor.plate);
         }
         printf("\n");
         
         //Print the status of the information signs
         printf("Status of the information signs\n");
         for(int i = 0; i < ENTRANCES; i++){
-            printf("%d: %c  ", i+1, shm.data->entrance[i].information_sign.display);
+            printf("%d: %-3c  ", i+1, shm.data->entrance[i].information_sign.display);
         }
         printf(" \n\n");
 
@@ -257,7 +253,7 @@ void display(shared_memory_t shm){
         }
 
         printf("\n");
-        usleep(50 * MS_IN_MICROSECONDS);
+        usleep(500 * MS_IN_MICROSECONDS);
     }
 
 
