@@ -6,9 +6,9 @@
 #include <math.h>
 #include "mem_init.h"
 
-// Global variables for the carpark simulator 
+// Global variables for the carpark simulator
 // ---------------------------------------------
-// Definitions 
+// Definitions
 #define TIME_SCALE 0.1
 #define MS_IN_MICROSECONDS 1000 * TIME_SCALE
 #define QueueSize 100
@@ -23,15 +23,15 @@ pthread_mutex_t queueEntry;
 pthread_mutex_t queueExit;
 int carLevelCount[LEVELS] = {0};
 
-
 // ---------------------------------------------
-// Methods in charge of random generation 
+// Methods in charge of random generation
 // ---------------------------------------------
 
 // The random function needs to be thread safe when generating random numbers
 // ---------------------------------------------
 pthread_mutex_t rand_mutex;
-int randThread(void){
+int randThread(void)
+{
     int randomNumber;
     pthread_mutex_lock(&rand_mutex);
     randomNumber = rand();
@@ -41,16 +41,21 @@ int randThread(void){
 
 // Random generator for picking a carpark level
 // ---------------------------------------------
-int GetRandLevel(void){
+int GetRandLevel(void)
+{
     int randomLevel;
     randomLevel = randThread() % LEVELS;
-    if (carLevelCount[randomLevel] < QueueSize){
+    if (carLevelCount[randomLevel] < QueueSize)
+    {
         return randomLevel;
     }
-    else{
-        //Loop through the levels to find a level with space
-        for (int i = 0; i < LEVELS; i++){
-            if (carLevelCount[i] < QueueSize){
+    else
+    {
+        // Loop through the levels to find a level with space
+        for (int i = 0; i < LEVELS; i++)
+        {
+            if (carLevelCount[i] < QueueSize)
+            {
                 return i;
             }
         }
@@ -61,47 +66,59 @@ int GetRandLevel(void){
 //---------------------------------------------
 // Methods in charge of the car queue
 //---------------------------------------------
-// Method to add a car to the queue
-
 
 //---------------------------------------------
 // Methods for the LPR sensor
 //---------------------------------------------
-// Initialise the LPR sensor
-// void *initLPR(void *arg)
-// {
-// 	lpr_sensor_t *lpr = arg;
 
-//     // check if mutex failed
-//     if (pthread_mutex_init(&lpr->mutex, NULL) != 0)
-//     {
-//         printf("Mutex init failed");
-//     }
+/**
+ * @brief Triggers the LPR on the destination level and
+ * scans the car's license plate.
+ *
+ * @param destLevel Destination level
+ * @param licencePlate License plate of the car
+ * @param p_shm Pointer to the shared memory
+ */
+void ActivateLPR(int destLevel, char *licencePlate, shared_memory_data_t *p_shm)
+{
+    lpr_sensor_t *p_lpr = &p_shm->entrance[destLevel].lpr_sensor;
+    memcpy(p_lpr->plate, licencePlate, LICENCE_PLATE_SIZE);
+    pthread_cond_signal(&p_lpr->cond);
+}
 
-//     // check if failed 
-//     // if (pthread_mutex_init(&lpr->mutex, &mutexAttr) != 0) {
-//     //     printf("LPR mutex init failed");
-//     // }
+/**
+ * @brief Waits for the display to direct the car to the correct level.
+ *
+ * @param destLevel Destination level
+ * @param p_shm Pointer to the shared memory
+ */
+void WaitForLPRorGate(int destLevel, shared_memory_data_t *p_shm)
+{
+    lpr_sensor_t *p_lpr = &p_shm->entrance[destLevel].lpr_sensor;
+    information_sign_t *p_info = &p_shm->entrance[destLevel].information_sign;
 
-//     //pthread_cond_init(&lpr->cond, &condAttr);
-//     return NULL;
-// }
+    // wait for LPR or gate to be free
+    pthread_cond_wait(&p_info->cond, &p_info->mutex);
+    if (DEBUG)
+        printf("%s has been granted access to level %c\n", p_lpr->plate,
+               p_shm->entrance[destLevel].information_sign.display + 1);
+}
 
 //---------------------------------------------
 // Methods for the information display
 //---------------------------------------------
-// Initialise the information display
+
 void *initDisplay(void *arg)
 {
     information_sign_t *display = arg;
 
-    // check if failed 
-    if (pthread_mutex_init(&display->mutex, NULL) != 0) {
+    // check if failed
+    if (pthread_mutex_init(&display->mutex, NULL) != 0)
+    {
         printf("Display mutex init failed");
     }
     return NULL;
 }
-
 
 // ---------------------------------------------
 // Functions relating to the boomgate          |
@@ -109,29 +126,31 @@ void *initDisplay(void *arg)
 
 // Function to initalise the boom gate
 // ---------------------------------------------
-void *boomgateInit(void *arg){
+void *boomgateInit(void *arg)
+{
     boom_gate_t *boom_gate = arg;
-    
+
     // Error check the mutex and condition variable
-    if (pthread_mutex_init(&boom_gate->mutex, NULL) != 0) {
+    if (pthread_mutex_init(&boom_gate->mutex, NULL) != 0)
+    {
         printf("Boom gate mutex init failed");
     }
 
-    // Lock the mutex 
+    // Lock the mutex
     pthread_mutex_lock(&boom_gate->mutex);
     // Set the boom gate to closed
     boom_gate->status = 'C';
-    //Broadcast the condition variable
+    // Broadcast the condition variable
     pthread_cond_broadcast(&boom_gate->cond);
     // Unlock the mutex
     pthread_mutex_unlock(&boom_gate->mutex);
     return NULL;
-
 }
 
 // Function that will be called by the boom gate thread
 // ---------------------------------------------
-void boomGateSimualtor(void *arg){
+void boomGateSimualtor(void *arg)
+{
     // Get the boom gate thread
     boom_gate_t *boom_gate = arg;
     // Lock the boomgate mutex for use
@@ -139,40 +158,44 @@ void boomGateSimualtor(void *arg){
     // Logic for the boom gate
     //------------------------
     // If the boomgate has been set to raise
-    if (boom_gate->status == 'R'){
+    if (boom_gate->status == 'R')
+    {
         // Raise the boom gate after 10ms
         usleep(10 * MS_IN_MICROSECONDS);
         boom_gate->status = 'O';
         // Broadcast the change to the boom gate
         pthread_cond_broadcast(&boom_gate->cond);
-        //Print the boom gate status
+        // Print the boom gate status
         usleep(20 * MS_IN_MICROSECONDS);
     }
     // If the boom gate has been set to open
-    else if (boom_gate->status == 'O'){
-        //Print the boom gate status
+    else if (boom_gate->status == 'O')
+    {
+        // Print the boom gate status
     }
-    // If the boom gate is set to lowering 
-    else if (boom_gate->status == 'L'){
+    // If the boom gate is set to lowering
+    else if (boom_gate->status == 'L')
+    {
         // Lower the boom gate after 10ms
         usleep(10 * MS_IN_MICROSECONDS);
         boom_gate->status = 'C';
         // Broadcast the change to the boom gate
         pthread_cond_broadcast(&boom_gate->cond);
-        //Print the boom gate status
+        // Print the boom gate status
     }
     // If the boom gate is set to closed
-    else if (boom_gate->status == 'C'){
-        //Print the boom gate status
+    else if (boom_gate->status == 'C')
+    {
+        // Print the boom gate status
     }
     // If the boom gate is set to an illegal status
-    else{
-        //Print the boom gate status
+    else
+    {
+        // Print the boom gate status
         printf("Boom gate is in an illegal state");
     }
     // Unlock the boom gate mutex
     pthread_mutex_unlock(&boom_gate->mutex);
-
 }
 
 // ---------------------------------------------
@@ -181,20 +204,23 @@ void boomGateSimualtor(void *arg){
 
 // Function to get a plate from plates.txt
 // ---------------------------------------------
-char* GenerateLicencePlate(){
+char *GenerateLicencePlate()
+{
     // Allocate memory for the plate
     char *plate = malloc(LICENCE_PLATE_SIZE);
     FILE *fp = fopen(LICENCE_PLATE_DIR, "r");
     // Error check the file
-    if (fp == NULL){
+    if (fp == NULL)
+    {
         printf("Error opening file");
     }
-    // Pick a random line 
-    int randomPlateLine = randThread()%100 + 1;
+    // Pick a random line
+    int randomPlateLine = randThread() % 100 + 1;
     // printf("Line: %d\n", randomPlateLine);
-    for(int i = 0; i < randomPlateLine; i++){
+    for (int i = 0; i < randomPlateLine; i++)
+    {
         // TODO change plate to LICENCE_PLATE_SIZE
-        fgets(plate, sizeof(plate)+1, fp);
+        fgets(plate, sizeof(plate) + 1, fp);
     }
     fclose(fp);
     return plate;
@@ -231,25 +257,6 @@ int sendCarToLevel(int8_t entranceLevel, char grantedLevel,
     // Exit the thread
     pthread_exit(NULL);
     return 1;
-}
-
-void ActivateLPR(int destLevel, char *licencePlate, shared_memory_data_t *p_shm)
-{
-    lpr_sensor_t *p_lpr = &p_shm->entrance[destLevel].lpr_sensor;
-    memcpy(p_lpr->plate, licencePlate, LICENCE_PLATE_SIZE);
-    pthread_cond_signal(&p_lpr->cond);
-}
-
-void WaitForLPRorGate(int destLevel, shared_memory_data_t *p_shm)
-{
-    lpr_sensor_t *p_lpr = &p_shm->entrance[destLevel].lpr_sensor;
-    information_sign_t *p_info = &p_shm->entrance[destLevel].information_sign;
-
-    // wait for LPR or gate to be free
-    pthread_cond_wait(&p_info->cond, &p_info->mutex);
-    if (DEBUG)
-    printf("%s has been granted access to level %c\n", p_lpr->plate,
-           p_shm->entrance[destLevel].information_sign.display + 1);
 }
 
 /**
@@ -315,16 +322,17 @@ void *generateCar(void *shm)
 }
 
 // ---------------------------------------------
-// Set defaults 
+// Set defaults
 // ---------------------------------------------
-//create a function that sets the default value for boom gate
+// create a function that sets the default value for boom gate
 void setBoomGateStatus(boom_gate_t *boom_gate, char status)
 {
     boom_gate->status = status;
 }
 
-void setDefaults(shared_memory_t shm) {
-    
+void setDefaults(shared_memory_t shm)
+{
+
     pthread_attr_t pthreadAttr;
     pthread_mutexattr_t mutexAttr;
     pthread_condattr_t condAttr;
@@ -333,68 +341,71 @@ void setDefaults(shared_memory_t shm) {
     pthread_condattr_init(&condAttr);
     pthread_mutexattr_setpshared(&mutexAttr, PTHREAD_PROCESS_SHARED);
     pthread_condattr_setpshared(&condAttr, PTHREAD_PROCESS_SHARED);
-    
-    
+
     pthread_t *boomgatethreads = malloc(sizeof(pthread_t) * (ENTRANCES + EXITS));
-    
-    for (int i = 0; i < ENTRANCES; i++) {
-		boom_gate_t *bg = &shm.data->entrance[i].boom_gate;
+
+    for (int i = 0; i < ENTRANCES; i++)
+    {
+        boom_gate_t *bg = &shm.data->entrance[i].boom_gate;
         pthread_mutex_init(&bg->mutex, &mutexAttr);
         pthread_cond_init(&bg->cond, &condAttr);
-		pthread_create(boomgatethreads + i, NULL, boomgateInit,(void *) bg);
-	}
+        pthread_create(boomgatethreads + i, NULL, boomgateInit, (void *)bg);
+    }
 
-    for (int i = 0; i < EXITS; i++) {
+    for (int i = 0; i < EXITS; i++)
+    {
         boom_gate_t *bg = &shm.data->exit[i].boom_gate;
         pthread_mutex_init(&bg->mutex, &mutexAttr);
         pthread_cond_init(&bg->cond, &condAttr);
-        pthread_create(boomgatethreads + i, NULL, boomgateInit,(void *) bg);
+        pthread_create(boomgatethreads + i, NULL, boomgateInit, (void *)bg);
     }
 
     // Create threads for the LPR sensors
-    //pthread_t *lprthreads = malloc(sizeof(pthread_t) * (ENTRANCES + EXITS));
+    // pthread_t *lprthreads = malloc(sizeof(pthread_t) * (ENTRANCES + EXITS));
     // For LPR entrance
-    for (int i = 0; i < ENTRANCES; i++) {
+    for (int i = 0; i < ENTRANCES; i++)
+    {
         lpr_sensor_t *lpr = &shm.data->entrance[i].lpr_sensor;
         pthread_mutex_init(&lpr->mutex, &mutexAttr);
         pthread_cond_init(&lpr->cond, &condAttr);
-        //pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
+        // pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
     }
     // For LPR exit
-    for (int i = 0; i < EXITS; i++) {
+    for (int i = 0; i < EXITS; i++)
+    {
         lpr_sensor_t *lpr = &shm.data->exit[i].lpr_sensor;
         pthread_mutex_init(&lpr->mutex, &mutexAttr);
         pthread_cond_init(&lpr->cond, &condAttr);
-        //pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
+        // pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
     }
-    // For LPR on each level 
-    for (int i = 0; i < LEVELS; i++) {
+    // For LPR on each level
+    for (int i = 0; i < LEVELS; i++)
+    {
         lpr_sensor_t *lpr = &shm.data->level[i].lpr_sensor;
         pthread_mutex_init(&lpr->mutex, &mutexAttr);
         pthread_cond_init(&lpr->cond, &condAttr);
-        //pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
+        // pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
     }
 
     // Create threads for the info signs
     pthread_t *infothreads = malloc(sizeof(pthread_t) * (ENTRANCES));
     // For info signs entrance
-    for (int i = 0; i < ENTRANCES; i++) {
+    for (int i = 0; i < ENTRANCES; i++)
+    {
         information_sign_t *info = &shm.data->entrance[i].information_sign;
         pthread_mutex_init(&info->mutex, &mutexAttr);
         pthread_cond_init(&info->cond, &condAttr);
-        pthread_create(infothreads + i, NULL, initDisplay,(void *) info);
+        pthread_create(infothreads + i, NULL, initDisplay, (void *)info);
     }
-
-
 }
 
-// main function 
+// main function
 int main(void)
 {
-    //system("./manager&");
+    // system("./manager&");
 
     printf("Welcome to the simulator\n");
-     //Set the seed of the random number generator
+    // Set the seed of the random number generator
     srand(time(0));
 
     shared_memory_t shm;
@@ -404,15 +415,14 @@ int main(void)
     // create a thread to generate cars
     pthread_t carGen;
     // copy shm to a new pointer
-    //shared_memory_t *shmCar = &shm;
+    // shared_memory_t *shmCar = &shm;
 
     shared_memory_data_t *shmCar = shm.data;
-    
 
-    //lpr_sensor_t *lpr2 = &shm.data->entrance->lpr_sensor;
-    pthread_create(&carGen, NULL, generateCar, (void *) shmCar);
+    // lpr_sensor_t *lpr2 = &shm.data->entrance->lpr_sensor;
+    pthread_create(&carGen, NULL, generateCar, (void *)shmCar);
 
-    // Change level 4 LPR plate 
+    // Change level 4 LPR plate
 
     // Put string into LPR sensor plate
     // char *plate = getPlate();
@@ -421,32 +431,32 @@ int main(void)
     // printf("%s read into level LPR\n", lpr->plate);
     // free(plate);
 
-    for (;;) {
+    for (;;)
+    {
 
         // // Close the boom gates for testing
         // for (int i = 0; i < ENTRANCES; i++) {
         //     shm.data->entrance[i].boom_gate.status = 'L';
         // }
-        
-        for(int i = 0; i < ENTRANCES; i++) {
+
+        for (int i = 0; i < ENTRANCES; i++)
+        {
             boom_gate_t *bg = &shm.data->entrance[i].boom_gate;
 
-            if (bg->status == 'R'){
+            if (bg->status == 'R')
+            {
                 pthread_t boomgatethread;
-                pthread_create(&boomgatethread, NULL,(void *(*)(void *))boomGateSimualtor, (void *) bg);
-                //pthread_join(boomgatethread, NULL);
+                pthread_create(&boomgatethread, NULL, (void *(*)(void *))boomGateSimualtor, (void *)bg);
+                // pthread_join(boomgatethread, NULL);
             }
-            else if (bg->status == 'L'){
+            else if (bg->status == 'L')
+            {
                 pthread_t boomgatethread;
-                pthread_create(&boomgatethread, NULL,(void *(*)(void *))boomGateSimualtor, (void *) bg);
-                //pthread_join(boomgatethread, NULL);
+                pthread_create(&boomgatethread, NULL, (void *(*)(void *))boomGateSimualtor, (void *)bg);
+                // pthread_join(boomgatethread, NULL);
             }
         }
 
-
         usleep(5 * MS_IN_MICROSECONDS);
-
     }
-
-
 }
