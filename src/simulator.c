@@ -12,7 +12,8 @@
 #define MS_IN_MICROSECONDS 1000
 #define QueueSize 100
 
-#define platesDir "../data/plates.txt"
+#define LICENCE_PLATE_DIR "../data/plates.txt"
+#define LICENCE_PLATE_SIZE 6
 
 // variables for car queue
 pthread_mutex_t queueEntry;
@@ -37,7 +38,7 @@ int randThread(void){
 
 // Random generator for picking a carpark level
 // ---------------------------------------------
-int randLevel(void){
+int GetRandLevel(void){
     int randomLevel;
     randomLevel = randThread() % LEVELS;
     if (carLevelCount[randomLevel] < QueueSize){
@@ -177,10 +178,10 @@ void boomGateSimualtor(void *arg){
 
 // Function to get a plate from plates.txt
 // ---------------------------------------------
-char *getPlate(){
+char* GenerateLicencePlate(){
     // Allocate memory for the plate
-    char *plate = malloc(6);
-    FILE *fp = fopen(platesDir, "r");
+    char *plate = malloc(LICENCE_PLATE_SIZE);
+    FILE *fp = fopen(LICENCE_PLATE_DIR, "r");
     // Error check the file
     if (fp == NULL){
         printf("Error opening file");
@@ -189,6 +190,7 @@ char *getPlate(){
     int randomPlateLine = randThread()%100 + 1;
     // printf("Line: %d\n", randomPlateLine);
     for(int i = 0; i < randomPlateLine; i++){
+        // TODO change plate to LICENCE_PLATE_SIZE
         fgets(plate, sizeof(plate)+1, fp);
     }
     fclose(fp);
@@ -220,7 +222,7 @@ int sendCarToLevel(int8_t entranceLevel, char grantedLevel, char *LicensePlate, 
     // printf("%s is leaving through exit %d\n", LicensePlate, level+1);
     // //Trigger exit LPR
     // lpr_sensor_t *exitLPR = &shm->exit[level].lpr_sensor;
-    // memcpy(exitLPR->plate, LicensePlate, 6);
+    // memcpy(exitLPR->plate, LicensePlate, LICENCE_PLATE_SIZE);
 
     // Exit the thread
     pthread_exit(NULL);
@@ -231,15 +233,15 @@ int sendCarToLevel(int8_t entranceLevel, char grantedLevel, char *LicensePlate, 
 // ---------------------------------------------
 void *carThread(void *shmCar){
     // Grab shared memory
-    shared_memory_data_t *shm = shmCar;
+    shared_memory_data_t* p_SHM = shmCar;
     // Grab a random license plate from the text file
     //!TODO: Make this generate a random license plate
-    char *plate = getPlate();
-    char LicensePlate[6];
-    memcpy(LicensePlate, plate, 6);
+    char *plate = GenerateLicencePlate();
+    char licencePlate[LICENCE_PLATE_SIZE];
+    memcpy(licencePlate, plate, LICENCE_PLATE_SIZE);
     free(plate);
     // Grab a random level 
-    int level = randLevel();
+    int destinationLevel = GetRandLevel();
     // Grab a random exit level 
     //int exitLevel = randLevel();
     // Grab a random time to wait
@@ -248,16 +250,16 @@ void *carThread(void *shmCar){
 
 
     // print car details
-    printf("%s has arrived at entrance %d\n", LicensePlate, level+1);
+    printf("%s has arrived at entrance %d\n", licencePlate, destinationLevel+1);
 
     
     // Access the levels LPR sensor
-    lpr_sensor_t *lpr = &shm->entrance[level].lpr_sensor;
+    lpr_sensor_t* p_LPR = &p_SHM->entrance[destinationLevel].lpr_sensor;
 
     // Lock the LPR mutex
     //pthread_mutex_lock(&lpr->mutex);
 
-    memcpy(lpr->plate, LicensePlate, sizeof(LicensePlate));
+    memcpy(p_LPR->plate, licencePlate, sizeof(licencePlate));
     //strcpy(lpr->plate, LicensePlate);
 
     // Broadcast the condition variable
@@ -265,7 +267,7 @@ void *carThread(void *shmCar){
     // Signal the LPR sensor
 
 
-    pthread_cond_signal(&lpr->cond);
+    pthread_cond_signal(&p_LPR->cond);
     // broadcast the condition variable
     //pthread_cond_broadcast(&lpr->cond);
 
@@ -274,9 +276,9 @@ void *carThread(void *shmCar){
     // TO THIS POINT
 
     //Wait for the info sign to say the car can enter
-    information_sign_t *info = &shm->entrance[level].information_sign;
+    information_sign_t *info = &p_SHM->entrance[destinationLevel].information_sign;
     pthread_cond_wait(&info->cond, &info->mutex);
-    printf("%s has been granted access to level %c\n", lpr->plate, shm->entrance[level].information_sign.display+1);
+    printf("%s has been granted access to level %c\n", p_LPR->plate, p_SHM->entrance[destinationLevel].information_sign.display+1);
 
 
     // // If the car is rejected by the car park or full 
@@ -291,7 +293,7 @@ void *carThread(void *shmCar){
 
 
 
-    sendCarToLevel(level, info->display, lpr->plate, shm);
+    sendCarToLevel(destinationLevel, info->display, p_LPR->plate, p_SHM);
 
     // // Check if the information sign gave an integer
     // if (info->display == '1' || info->display == '2' || info->display == '3' || info->display == '4' || info->display == '5'){
@@ -463,7 +465,7 @@ int main(void)
     // Put string into LPR sensor plate
     // char *plate = getPlate();
     // lpr_sensor_t *lpr = &shm.data->entrance[0].lpr_sensor;
-    // memcpy(lpr->plate, plate, sizeof(char)*6);
+    // memcpy(lpr->plate, plate, sizeof(char)*LICENCE_PLATE_SIZE);
     // printf("%s read into level LPR\n", lpr->plate);
     // free(plate);
 
