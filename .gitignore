@@ -61,6 +61,7 @@ src/shared_mem_create.c
 ##########################################
 .vscode/*
 test/*
+Testing/*
 
 
 # build files
