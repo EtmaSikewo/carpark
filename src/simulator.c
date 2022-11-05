@@ -96,18 +96,32 @@ void WaitForLPRorGate(int destLevel, shared_memory_data_t *p_shm)
 {
     lpr_sensor_t *p_lpr = &p_shm->entrance[destLevel].lpr_sensor;
     information_sign_t *p_info = &p_shm->entrance[destLevel].information_sign;
+    pthread_mutex_lock(&p_info->mutex);
+    pthread_cond_wait(&p_info->cond, &p_info->mutex);
+
+    if (strcmp(&p_info->display, "F") == 0 || strcmp(&p_info->display, "X") == 0)
+    {
+        // Print the rejection message
+        printf("%s has been rejected\n", p_lpr->plate);
+        // Unlock the mutex
+        pthread_mutex_unlock(&p_info->mutex);
+        // Exit the thread
+        pthread_exit(NULL);
+    }
+
 
     // wait for LPR or gate to be free
     pthread_cond_wait(&p_info->cond, &p_info->mutex);
     if (DEBUG)
         printf("%s has been granted access to level %c\n", p_lpr->plate,
                p_shm->entrance[destLevel].information_sign.display + 1);
+    pthread_mutex_unlock(&p_info->mutex);
 }
 
 //---------------------------------------------
 // Methods for the information display
 //---------------------------------------------
-
+// Initialise the information display
 void *initDisplay(void *arg)
 {
     information_sign_t *display = arg;
@@ -147,22 +161,19 @@ void *boomgateInit(void *arg)
     return NULL;
 }
 
-
 /**
  * @brief Function to raise then lower boom gate.
  *! Could be merged into boomGateSimulator
- * 
- * @param gateLevel 
- * @param p_shm 
+ *
+ * @param gateLevel
+ * @param p_shm
  */
-void ActivateBoomGate(int gateLevel, shared_memory_data_t *p_shm)
+void ActivateBoomGate(int gateLevel, boom_gate_t *p_boom)
 {
-    boom_gate_t *p_boom = &p_shm->entrance[gateLevel].boom_gate;
-
     if (DEBUG)
         printf("Boom gate raising on %d\n", gateLevel + 1);
     p_boom->status = 'R';
-
+    pthread_cond_wait(&p_boom->cond, &p_boom->mutex);
     if (DEBUG)
         printf("Boom gate lowering on %d\n", gateLevel + 1);
     p_boom->status = 'L';
@@ -203,6 +214,7 @@ void boomGateSimualtor(void *arg)
         // Broadcast the change to the boom gate
         pthread_cond_broadcast(&boom_gate->cond);
         // Print the boom gate status
+        usleep(20 * MS_IN_MICROSECONDS);
     }
     // If the boom gate is set to closed
     else if (boom_gate->status == 'C')
@@ -214,9 +226,13 @@ void boomGateSimualtor(void *arg)
     {
         // Print the boom gate status
         printf("Boom gate is in an illegal state");
+        pthread_exit(NULL);
     }
     // Unlock the boom gate mutex
     pthread_mutex_unlock(&boom_gate->mutex);
+
+    // Exit the thread
+    pthread_exit(NULL);
 }
 
 // ---------------------------------------------
@@ -258,18 +274,13 @@ char *GenerateLicencePlate()
 int sendCarToLevel(int8_t entranceLevel, char grantedLevel,
                    char *LicensePlate, shared_memory_data_t *p_shm)
 {
-    if (grantedLevel < 0)
-    {
-        printf("Display says X or F\n");
-        return 0;
-    }
     // Simulate boom gate to open
-    ActivateBoomGate(entranceLevel, p_shm);
-
+    boom_gate_t *p_boom = &p_shm->entrance[entranceLevel].boom_gate;
+    pthread_mutex_lock(&p_boom->mutex);
+    ActivateBoomGate(entranceLevel, p_boom);
     printf("%s heading to level: %c\n", LicensePlate, grantedLevel + 1);
+    pthread_mutex_unlock(&p_boom->mutex);
 
-    // Exit the thread
-    pthread_exit(NULL);
     return 1;
 }
 
@@ -297,12 +308,14 @@ void *carThread(void *shmCar)
 
     //* step 2 - generate a random level number
     int destLevel = GetRandLevel();
+    int exitLevel = GetRandLevel();
+    int waitTime = randThread() % 2000;
     if (DEBUG)
         printf("%s has arrived at entrance %d\n", p_shm->entrance[destLevel].lpr_sensor.plate,
                destLevel);
 
     //* step 3 - send the car to the entrance (activate the level LPR)
-    // Access the levels LPR sensor
+    // Access the entrance LPR sensor
     lpr_sensor_t *p_lpr = &p_shm->entrance[destLevel].lpr_sensor;
     memcpy(p_lpr->plate, licencePlate, LICENCE_PLATE_SIZE);
     pthread_cond_signal(&p_lpr->cond);
@@ -314,12 +327,28 @@ void *carThread(void *shmCar)
     sendCarToLevel(destLevel,
                    p_shm->entrance[destLevel].information_sign.display,
                    p_shm->entrance->lpr_sensor.plate, p_shm);
+
+    // level LPR
+    lpr_sensor_t *p_level_lpr = &p_shm->level[destLevel].lpr_sensor;
+    memcpy(p_level_lpr->plate, licencePlate, LICENCE_PLATE_SIZE);
+
+    // Leave car park after wait time
+    usleep(waitTime * MS_IN_MICROSECONDS);
+    printf("%s is leaving through exit %d\n", licencePlate, exitLevel + 1);
+
+    //trigger exit LPR
+    lpr_sensor_t *p_exit_lpr = &p_shm->exit[exitLevel].lpr_sensor;
+    memcpy(p_exit_lpr->plate, licencePlate, LICENCE_PLATE_SIZE);
+
+    //sendcartoexit(); (same as sendtolevel without display)
+
+
     return NULL;
 }
 
 /**
  * @brief Generate a car every 1-100ms. Runs in its own thread.
- * 
+ *
  * @param shm Pointer to the shared memory data
  * @return void* For threading
  */
