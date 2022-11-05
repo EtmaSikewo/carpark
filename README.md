@@ -52,6 +52,9 @@ Check == attempted
     /**TODO:
 
     # BILLING
+    
     # TEMP SENSE ON EACH LEVEL
     # HASH TABLE
+
+    # MAKE VIDEO
     **/
