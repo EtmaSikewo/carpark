@@ -14,12 +14,12 @@ Check == attempted
     - Send car to entrance boom gate (Check)
     - Send license to LPR (Check)
     - Wait for manager to display info sign (check)
-    - Wait for boomgate to open (TODO)
-    - Drive to level {Trigger Level LPR} (TODO)
-    - Park to set time (TODO)
-    - Exit park on set level and trigger exit LPR (TODO)
-    - Wait for exit boomgate
-    - Die
+    - Wait for boomgate to open (check)
+    - Drive to level {Trigger Level LPR} (check)
+    - Park to set time (check)
+    - Exit park on set level and trigger exit LPR (check)
+    - Wait for exit boomgate (check)
+    - Die (✅)
 
 # Manager 
 - Load shared memory (Check)
@@ -30,12 +30,12 @@ Check == attempted
         - open entrance boom gate   (Check)
         - close entrance boom gate  (Check)
     - Level LPR
-        - BRR idk trigger parked    (TODO)
+        - BRR idk trigger parked    (check)
     - Exit LPR
         - Reads plate   (Check)
         - Opens/Close boomgate (Check)
-        - Free the parking spot (TODO)
-        - Trigger billing (TODO)
+        - Free the parking spot (check)
+        - Trigger billing (TODO:)
 - Hash table
     - Check validity of plate (TODO)
     - Reject invalid car    (TODO)
@@ -49,15 +49,9 @@ Check == attempted
 - UI
     - Display info (Check)
 
+    /**TODO:
 
-# Fire alarm
-
-
-
-
-    ->>>>> Car enters 
-    ->>>>> LPR
-    ->>>>> wait for infoSign 
-    --------> Decide if car can go in and where to go
-    ->>>>> Car waits for the boom 
-    ->>>>> Car drives to level
+    # BILLING
+    # TEMP SENSE ON EACH LEVEL
+    # HASH TABLE
+    **/
