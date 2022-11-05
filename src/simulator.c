@@ -346,11 +346,12 @@ void *generateCar(void *shm ){
     printf("Generating cars\n");
     // Setting the maxmium amount of spawned cars before queue implementation!!!
     //!TODO: Implement queue
-    int maximumCars = 5;
+    int maximumCars = 200;
     pthread_t cars[maximumCars];
     for (int i = 0; i < maximumCars; i++){
         pthread_create(&cars[i], NULL, carThread, shm);
-        int time = (randThread() % (1000 - 1 + 1)) + 1; // create random wait time between 1-100ms
+        //int time = (randThread() % (1000 - 1 + 1)) + 1; // create random wait time between 1-100ms
+        int time = randThread() % 100 + 1; // create random wait time between 1-100ms
         
         usleep(time*MS_IN_MICROSECONDS);
     }

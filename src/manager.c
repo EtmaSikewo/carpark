@@ -79,15 +79,11 @@ void *lprEntranceHandler(void *arg)
     //printf("lprEntranceHandler: gate %d\n", gate);
 
     lpr_sensor_t *lpr = &shm.data->entrance[gate].lpr_sensor;
-    //boom_gate_t *boom_gate = &entrance->boom_gate;
-    //information_sign_t *information_sign = &shm.data->entrance[gate].information_sign;
-    //information_sign->display = '4';
+    int levelToPark = 0;
 
     
     // Lock mutex
     //pthread_mutex_lock(&lpr->mutex);
-
-    int levelToPark = randThread() % LEVELS;
 
     for (;;){
         // Wait for condition
@@ -109,6 +105,7 @@ void *lprEntranceHandler(void *arg)
         else {
             for(;;){
                 
+                levelToPark = randThread() % LEVELS;
                 // Check if parking is available
                 if(check_parking_availability(levelToPark)){
                     // Remove one from parking
@@ -242,7 +239,13 @@ void display(shared_memory_t shm){
         // Print the parking information
         printf("Level information\n");
         for(int i = 0; i < LEVELS; i++){
-            printf("level %d: %d/%d\n", i+1, abs(parking[i]-PARKING_CAPACITY), PARKING_CAPACITY);
+            if (parking[i] == 0) {
+                printf("level %d: %d/%d |FULL|\n", i+1, abs(parking[i]-PARKING_CAPACITY), PARKING_CAPACITY);
+            }
+            else {
+                printf("level %d: %d/%d\n", i+1, abs(parking[i]-PARKING_CAPACITY), PARKING_CAPACITY);
+            }
+            
         }
 
         printf("\n");
