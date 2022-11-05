@@ -60,6 +60,7 @@ src/shared_mem_create.c
 # custom ingores
 ##########################################
 .vscode/*
+test/*
 
 
 # build files
