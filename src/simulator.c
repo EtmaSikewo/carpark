@@ -147,6 +147,27 @@ void *boomgateInit(void *arg)
     return NULL;
 }
 
+
+/**
+ * @brief Function to raise then lower boom gate.
+ *! Could be merged into boomGateSimulator
+ * 
+ * @param gateLevel 
+ * @param p_shm 
+ */
+void ActivateBoomGate(int gateLevel, shared_memory_data_t *p_shm)
+{
+    boom_gate_t *p_boom = &p_shm->entrance[gateLevel].boom_gate;
+
+    if (DEBUG)
+        printf("Boom gate raising on %d\n", gateLevel + 1);
+    p_boom->status = 'R';
+
+    if (DEBUG)
+        printf("Boom gate lowering on %d\n", gateLevel + 1);
+    p_boom->status = 'L';
+}
+
 // Function that will be called by the boom gate thread
 // ---------------------------------------------
 void boomGateSimualtor(void *arg)
@@ -219,8 +240,7 @@ char *GenerateLicencePlate()
     // printf("Line: %d\n", randomPlateLine);
     for (int i = 0; i < randomPlateLine; i++)
     {
-        // TODO change plate to LICENCE_PLATE_SIZE
-        fgets(plate, sizeof(plate) + 1, fp);
+        fgets(plate, LICENCE_PLATE_SIZE + 1, fp);
     }
     fclose(fp);
     return plate;
@@ -236,7 +256,7 @@ char *GenerateLicencePlate()
  * @return int
  */
 int sendCarToLevel(int8_t entranceLevel, char grantedLevel,
-                   char *LicensePlate, shared_memory_data_t *shm)
+                   char *LicensePlate, shared_memory_data_t *p_shm)
 {
     if (grantedLevel < 0)
     {
@@ -244,13 +264,7 @@ int sendCarToLevel(int8_t entranceLevel, char grantedLevel,
         return 0;
     }
     // Simulate boom gate to open
-    // TODO: Make this a function
-    if (DEBUG)
-        printf("Boom gate raising on %d\n", entranceLevel + 1);
-    shm->entrance[entranceLevel].boom_gate.status = 'R';
-    if (DEBUG)
-        printf("Boom gate lowering on %d\n", entranceLevel + 1);
-    shm->entrance[entranceLevel].boom_gate.status = 'L';
+    ActivateBoomGate(entranceLevel, p_shm);
 
     printf("%s heading to level: %c\n", LicensePlate, grantedLevel + 1);
 
@@ -301,7 +315,12 @@ void *carThread(void *shmCar)
     return NULL;
 }
 
-// Generate a car every 1-100ms
+/**
+ * @brief Generate a car every 1-100ms. Runs in its own thread.
+ * 
+ * @param shm Pointer to the shared memory data
+ * @return void* For threading
+ */
 void *generateCar(void *shm)
 {
     // wait 10 seconds before starting to generate cars
@@ -360,8 +379,6 @@ void setDefaults(shared_memory_t shm)
         pthread_create(boomgatethreads + i, NULL, boomgateInit, (void *)bg);
     }
 
-    // Create threads for the LPR sensors
-    // pthread_t *lprthreads = malloc(sizeof(pthread_t) * (ENTRANCES + EXITS));
     // For LPR entrance
     for (int i = 0; i < ENTRANCES; i++)
     {
@@ -370,6 +387,7 @@ void setDefaults(shared_memory_t shm)
         pthread_cond_init(&lpr->cond, &condAttr);
         // pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
     }
+
     // For LPR exit
     for (int i = 0; i < EXITS; i++)
     {
@@ -378,6 +396,7 @@ void setDefaults(shared_memory_t shm)
         pthread_cond_init(&lpr->cond, &condAttr);
         // pthread_create(lprthreads + i, NULL, initLPR,(void *) lpr);
     }
+
     // For LPR on each level
     for (int i = 0; i < LEVELS; i++)
     {
@@ -414,31 +433,14 @@ int main(void)
 
     // create a thread to generate cars
     pthread_t carGen;
-    // copy shm to a new pointer
-    // shared_memory_t *shmCar = &shm;
 
     shared_memory_data_t *shmCar = shm.data;
 
     // lpr_sensor_t *lpr2 = &shm.data->entrance->lpr_sensor;
     pthread_create(&carGen, NULL, generateCar, (void *)shmCar);
 
-    // Change level 4 LPR plate
-
-    // Put string into LPR sensor plate
-    // char *plate = getPlate();
-    // lpr_sensor_t *lpr = &shm.data->entrance[0].lpr_sensor;
-    // memcpy(lpr->plate, plate, sizeof(char)*LICENCE_PLATE_SIZE);
-    // printf("%s read into level LPR\n", lpr->plate);
-    // free(plate);
-
     for (;;)
     {
-
-        // // Close the boom gates for testing
-        // for (int i = 0; i < ENTRANCES; i++) {
-        //     shm.data->entrance[i].boom_gate.status = 'L';
-        // }
-
         for (int i = 0; i < ENTRANCES; i++)
         {
             boom_gate_t *bg = &shm.data->entrance[i].boom_gate;
@@ -446,13 +448,15 @@ int main(void)
             if (bg->status == 'R')
             {
                 pthread_t boomgatethread;
-                pthread_create(&boomgatethread, NULL, (void *(*)(void *))boomGateSimualtor, (void *)bg);
+                pthread_create(&boomgatethread, NULL,
+                               (void *(*)(void *))boomGateSimualtor, (void *)bg);
                 // pthread_join(boomgatethread, NULL);
             }
             else if (bg->status == 'L')
             {
                 pthread_t boomgatethread;
-                pthread_create(&boomgatethread, NULL, (void *(*)(void *))boomGateSimualtor, (void *)bg);
+                pthread_create(&boomgatethread, NULL,
+                               (void *(*)(void *))boomGateSimualtor, (void *)bg);
                 // pthread_join(boomgatethread, NULL);
             }
         }
