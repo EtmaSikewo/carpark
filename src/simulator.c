@@ -9,7 +9,8 @@
 // Global variables for the carpark simulator 
 // ---------------------------------------------
 // Definitions 
-#define MS_IN_MICROSECONDS 1000
+#define TIME_SCALE 0.1
+#define MS_IN_MICROSECONDS 1000 * TIME_SCALE
 #define QueueSize 100
 
 #define LICENCE_PLATE_SIZE 6
@@ -218,9 +219,11 @@ int sendCarToLevel(int8_t entranceLevel, char grantedLevel,
     }
     // Simulate boom gate to open
     // TODO: Make this a function
+    if (DEBUG)
+        printf("Boom gate raising on %d\n", entranceLevel + 1);
     shm->entrance[entranceLevel].boom_gate.status = 'R';
-    printf("Boom gate raised on %d\n", entranceLevel + 1);
-    printf("Boom gate closed on %d\n", entranceLevel + 1);
+    if (DEBUG)
+        printf("Boom gate lowering on %d\n", entranceLevel + 1);
     shm->entrance[entranceLevel].boom_gate.status = 'L';
 
     printf("%s heading to level: %c\n", LicensePlate, grantedLevel + 1);
@@ -230,22 +233,23 @@ int sendCarToLevel(int8_t entranceLevel, char grantedLevel,
     return 1;
 }
 
-void ActivateLPR(int destinationLevel, char *licencePlate, shared_memory_data_t *p_shm)
+void ActivateLPR(int destLevel, char *licencePlate, shared_memory_data_t *p_shm)
 {
-    lpr_sensor_t *p_lpr = &p_shm->entrance[destinationLevel].lpr_sensor;
+    lpr_sensor_t *p_lpr = &p_shm->entrance[destLevel].lpr_sensor;
     memcpy(p_lpr->plate, licencePlate, LICENCE_PLATE_SIZE);
     pthread_cond_signal(&p_lpr->cond);
 }
 
-void WaitForLPRorGate(int destinationLevel, shared_memory_data_t *p_shm)
+void WaitForLPRorGate(int destLevel, shared_memory_data_t *p_shm)
 {
-    lpr_sensor_t *p_lpr = &p_shm->entrance[destinationLevel].lpr_sensor;
-    information_sign_t *p_info = &p_shm->entrance[destinationLevel].information_sign;
+    lpr_sensor_t *p_lpr = &p_shm->entrance[destLevel].lpr_sensor;
+    information_sign_t *p_info = &p_shm->entrance[destLevel].information_sign;
 
     // wait for LPR or gate to be free
     pthread_cond_wait(&p_info->cond, &p_info->mutex);
+    if (DEBUG)
     printf("%s has been granted access to level %c\n", p_lpr->plate,
-           p_shm->entrance[destinationLevel].information_sign.display + 1);
+           p_shm->entrance[destLevel].information_sign.display + 1);
 }
 
 /**
@@ -271,20 +275,21 @@ void *carThread(void *shmCar)
     free(plate);
 
     //* step 2 - generate a random level number
-    int destinationLevel = GetRandLevel();
+    int destLevel = GetRandLevel();
     if (DEBUG)
-        printf("%s has arrived at entrance %d\n", licencePlate, destinationLevel + 1);
+        printf("%s has arrived at entrance %d\n", licencePlate,
+               destLevel + 1);
 
     //* step 3 - send the car to the entrance (activate the level LPR)
     // Access the levels LPR sensor
-    ActivateLPR(destinationLevel, licencePlate, p_shm);
+    ActivateLPR(destLevel, licencePlate, p_shm);
 
     //* step 4 - wait for LPR to choose a level
-    WaitForLPRorGate(destinationLevel, p_shm);
+    WaitForLPRorGate(destLevel, p_shm);
 
     //* step 5 - send the car through the boom gate
-    sendCarToLevel(destinationLevel,
-                   p_shm->entrance[destinationLevel].information_sign.display,
+    sendCarToLevel(destLevel,
+                   p_shm->entrance[destLevel].information_sign.display,
                    p_shm->entrance->lpr_sensor.plate, p_shm);
     return NULL;
 }
@@ -292,7 +297,7 @@ void *carThread(void *shmCar)
 // Generate a car every 1-100ms
 void *generateCar(void *shm)
 {
-    // Wait 10 seconds before generating cars
+    // wait 10 seconds before starting to generate cars
     usleep(10000 * MS_IN_MICROSECONDS);
     printf("Generating cars\n");
     // Setting the maxmium amount of spawned cars before queue implementation!!!
@@ -302,9 +307,8 @@ void *generateCar(void *shm)
     for (int i = 0; i < maximumCars; i++)
     {
         pthread_create(&cars[i], NULL, carThread, shm);
-        int time = (randThread() % (100 - 1 + 1)) + 1; // create random wait time between 1-100ms
-
-        usleep(time * MS_IN_MICROSECONDS);
+        // wait between 1 and 100ms before generating the next car
+        usleep(randThread() % (int)((100 * MS_IN_MICROSECONDS) + (1 * MS_IN_MICROSECONDS)));
     }
 
     return NULL;
