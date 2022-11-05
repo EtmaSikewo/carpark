@@ -87,13 +87,15 @@ void *lprEntranceHandler(void *arg)
     // Lock mutex
     //pthread_mutex_lock(&lpr->mutex);
 
+    int levelToPark = randThread() % LEVELS;
+
     for (;;){
         // Wait for condition
         pthread_mutex_lock(&lpr->mutex);
         pthread_cond_wait(&lpr->cond, &lpr->mutex);
         pthread_mutex_unlock(&lpr->mutex);
-        
-
+        // Pick a random level to park on 
+    
         // Set info sign to 4 testing
         pthread_mutex_lock(&shm.data->entrance[gate].information_sign.mutex);
 
@@ -106,8 +108,6 @@ void *lprEntranceHandler(void *arg)
         }
         else {
             for(;;){
-                // Pick a random level to park on 
-                int levelToPark = randThread() % LEVELS;
                 
                 // Check if parking is available
                 if(check_parking_availability(levelToPark)){
@@ -164,7 +164,6 @@ void *lprEntranceHandler(void *arg)
     }
 
     return NULL;
-    
 }
 
 void *lprExitHandler(void *arg) {
@@ -175,19 +174,13 @@ void *lprExitHandler(void *arg) {
 
     lpr_sensor_t *lpr = &shm.data->exit[gate].lpr_sensor;
     
-    //TODO: THIS IS BROKEN
-    for (;;){
-        // Wait for condition
+    for (;;) {
         pthread_mutex_lock(&lpr->mutex);
         pthread_cond_wait(&lpr->cond, &lpr->mutex);
-        
-        parking[gate] = parking[gate] + 1;
+        parking[gate]++;
         pthread_mutex_unlock(&lpr->mutex);
     }
-
-    return NULL; 
 }
-
 
 void display(shared_memory_t shm){     
         // ---------------------------------------------
@@ -284,7 +277,7 @@ int main(void)
     }
 
     // Thread for the entranceLPRSensors
-    pthread_t lprThreadEntrances[ENTRANCES]; 
+    pthread_t lprThreadEntrances[ENTRANCES];
     pthread_t lprThreadExits[EXITS]; 
 
     // LPR memory 
@@ -292,6 +285,7 @@ int main(void)
     for (int i = 0; i < ENTRANCES; i++){
         pthread_create(&lprThreadEntrances[i], NULL, lprEntranceHandler, (void *) (&entranceData[i]));
     }
+
     for (int i = 0; i < EXITS; i++){
         pthread_create(&lprThreadExits[i], NULL, lprExitHandler, (void *) (&entranceData[i]));
     }

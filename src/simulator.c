@@ -263,7 +263,7 @@ void *carThread(void *shmCar){
     // Grab a random level 
     int level = randLevel();
     // Grab a random exit level 
-    int exitLevel = randLevel();
+    int exitLevel = level;
     // Grab a random time to wait
     //!TODO TIMINGS
     int waitTime = randThread() % 10000 + 100;
@@ -311,7 +311,9 @@ void *carThread(void *shmCar){
         return NULL;
     }
     
-    printf("%s has been granted access to level %c\n", lpr->plate, shm->entrance[level].information_sign.display);
+    printf("%s has been granted access to level %c\n", lpr->plate, info->display);
+
+    exitLevel = atoi(&info->display) - 1;
 
     pthread_mutex_unlock(&info->mutex);
 
