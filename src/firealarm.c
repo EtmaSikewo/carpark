@@ -130,7 +130,7 @@ static void *openboomgate(void *arg)
 		if (boom_gate->status == 'O') {
             pthread_mutex_lock(&boom_gate->mutex); // lock it open
             for(;;) {
-                // do nothing
+                // do nothing!
             }
 		}
 		pthread_cond_wait(&boom_gate->cond, &boom_gate->mutex);
