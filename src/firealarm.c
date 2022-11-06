@@ -125,8 +125,13 @@ static void *openboomgate(void *arg)
 		if (boom_gate->status == 'C') {
 			boom_gate->status = 'R';
 			pthread_cond_broadcast(&boom_gate->cond);
+            pthread_mutex_unlock(&boom_gate->mutex);
 		}
 		if (boom_gate->status == 'O') {
+            pthread_mutex_lock(&boom_gate->mutex); // lock it open
+            for(;;) {
+                // do nothing!
+            }
 		}
 		pthread_cond_wait(&boom_gate->cond, &boom_gate->mutex);
 	}
@@ -154,6 +159,7 @@ static void emergency_mode(shared_memory_t *shm) {
 	
 	// Show evacuation message on an endless loop
 	for (;;) {
+        
 		const char evacmessage[] = "EVACUATE ";
 		for (const char *p = evacmessage; *p != '\0'; p++) {
 			for (int i = 0; i < ENTRANCES; i++) {
@@ -164,7 +170,7 @@ static void emergency_mode(shared_memory_t *shm) {
 				//sign->display = *p;
                 (void)strcpy(&info->display, p);
 				pthread_cond_broadcast(&info->cond);
-				//pthread_mutex_unlock(&info->mutex);
+				pthread_mutex_unlock(&info->mutex);
 			}
 			usleep(20000);
 		}
