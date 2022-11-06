@@ -3,9 +3,12 @@
 #include <string.h>
 #include "mem_init.h"
 #include <sys/time.h>
+#include <unistd.h>
 
 #define MS_IN_MICROSECONDS 1000
 #define CENTS_PER_MS 0.05
+
+#define BILLING_DIR "../data/billing.txt"
 
 #define DEBUG 0
 
@@ -128,6 +131,20 @@ int DoesCarExist(char *licencePlate)
         }
     }
     return 0;
+}
+
+void AppendToFile(lpr_sensor_t *lpr, int timeDiff)
+{
+    //  open the file and append to it
+    FILE *fp = fopen(BILLING_DIR, "a+");
+    if (fp == NULL)
+    {
+        printf("Error opening file! (APPEND ERR)\n");
+        exit(1);
+    }
+    // write to the file
+    fprintf(fp, "%s\t$%.2f\n", lpr->plate, timeDiff * CENTS_PER_MS);
+    fclose(fp);
 }
 
 /**
@@ -271,9 +288,10 @@ void *lprExitHandler(void *arg) {
         }
         // calculate the time difference
         int timeDiff = (exitTime.tv_sec - entryTime.tv_sec) * 1000 + (exitTime.tv_usec - entryTime.tv_usec) / 1000;
-        if (DEBUG)
-            printf("%s stayed for %dms\n", lpr->plate, timeDiff);
+        AppendToFile(lpr, timeDiff);    //  writes to billing.txt
         pthread_mutex_unlock(&lpr->mutex);
+
+
         // calculate the price
         totalBilling += timeDiff * CENTS_PER_MS;
     }
