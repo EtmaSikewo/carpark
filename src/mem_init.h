@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 
+//  Change this value to scale the speed of time
 #define TIME_SCALE 1
 #define MS_IN_MICROSECONDS 1000 * TIME_SCALE
 
