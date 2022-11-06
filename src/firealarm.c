@@ -1,5 +1,5 @@
 //#include <stdio.h>
-#include <stdlib.h>
+//#include <stdlib.h>
 #include <pthread.h>
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -56,15 +56,11 @@ static float getMedian(int *arr, int size)
 static void *tempmonitor(void *arg)
 {
     level_t *level = arg;
-	struct tempnode *templist = NULL;
-    struct tempnode *medianlist = NULL;
-    struct tempnode *oldesttemp;
 
     int temparray[MEDIAN_WINDOW] = {0};
     int sortarray[MEDIAN_WINDOW] = {0};
     int smoothedtemparray[TEMPCHANGE_WINDOW] = {0};
     int tempsReceived = 0;
-    int smoothedTemps = 0;
     int temparrayindex = 0;
     int smoothedtemparrayindex = 0;
     int tempOldest;
@@ -73,8 +69,6 @@ static void *tempmonitor(void *arg)
 		// Calculate address of temperature sensor
         int temp = level->temperature_sensor;
         int hightemps = 0;
-		
-
         // Add temperature to array
         if(temparrayindex == MEDIAN_WINDOW) {
             temparrayindex = 0;
@@ -107,14 +101,11 @@ static void *tempmonitor(void *arg)
 			}
 			
 			if (tempsReceived >= (TEMPCHANGE_WINDOW + MEDIAN_WINDOW)) {
-				// If 90% of the last 30 temperatures are >= 58 degrees,
-				// this is considered a high temperature. Raise the alarm
+				// If 90% of the last 30 temperatures are >= 58 degrees, this is considered a high temperature. Raise the alarm
 				if (hightemps >= (TEMPCHANGE_WINDOW * ALARM_TEMP_AVG_PERCENT)) {
 					alarm_active = 1;
 				}
-				// If the newest temp is >= 8 degrees higher than the oldest
-				// temp (out of the last 30), this is a high rate-of-rise.
-				// Raise the alarm
+				// If the newest temp is >= 8 degrees higher than the oldest temp (out of the last 30), this is a high rate-of-rise. Raise the alarm
 				if ((temp - tempOldest) >= ALARM_TEMP_SINGLE_VARIANCE) {
 					alarm_active = 1;
                 }
