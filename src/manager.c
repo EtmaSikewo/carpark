@@ -7,6 +7,8 @@
 #define MS_IN_MICROSECONDS 1000
 #define CENTS_PER_MS 0.05
 
+#define DEBUG 0
+
 // Global variables
 int parking[LEVELS];
 float totalBilling = 0;
@@ -140,7 +142,8 @@ void *lprEntranceHandler(void *arg)
     gate_data_t *gate_data = arg;
     shared_memory_t shm = gate_data->shm;
     int gate = gate_data->gate;
-    //printf("lprEntranceHandler: gate %d\n", gate);
+    if (DEBUG)
+        printf("lprEntranceHandler: gate %d\n", gate);
 
     lpr_sensor_t *lpr = &shm.data->entrance[gate].lpr_sensor;
     int levelToPark = 0;
@@ -268,15 +271,10 @@ void *lprExitHandler(void *arg) {
         }
         // calculate the time difference
         int timeDiff = (exitTime.tv_sec - entryTime.tv_sec) * 1000 + (exitTime.tv_usec - entryTime.tv_usec) / 1000;
-        // print the time difference
-        // printf("Time difference: %d\n", timeDiff);
-        printf("%s stayed for %dms\n", lpr->plate, timeDiff);
+        if (DEBUG)
+            printf("%s stayed for %dms\n", lpr->plate, timeDiff);
         pthread_mutex_unlock(&lpr->mutex);
-
-        
-        // long milliseconds = (exitTime.tv_sec - entryTime.tv_sec) * 1000 + exitTime.tv_usec - entryTime.tv_usec;
-        // printf("%s stayed for %lims\n", lpr->plate, milliseconds);
-        // pthread_mutex_unlock(&lpr->mutex);
+        // calculate the price
         totalBilling += timeDiff * CENTS_PER_MS;
     }
 
@@ -365,19 +363,15 @@ int main(void)
 
     srand(time(0));
     setupParking();
-    // // Sleep for abit
-    // usleep(2000 * MS_IN_MICROSECONDS);
 
     //  create the shared memory segment
     shared_memory_t shm;
-    get_shared_object(&shm, "PARKING"); // Need to error handle this
+    if(!get_shared_object(&shm, "PARKING"))
+    {
+        printf("Failed to read shared memory segment\n");
+        return 1;
+    }
     InitCarCapacity();
-
-    // Structure to hold the entrance number and the shared memory
-    // struct entranceNumAndShm{
-    //     int entranceNum;
-    //     shared_memory_t shm;
-    // };
 
     gate_data_t entranceData[ENTRANCES];
     for (int i = 0; i < ENTRANCES; i++)
@@ -404,4 +398,5 @@ int main(void)
     for (;;){
         display(shm);
     }
+    return 0;
 }
