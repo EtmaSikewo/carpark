@@ -105,7 +105,6 @@ void *initDisplay(void *arg)
     return NULL;
 }
 
-
 // ---------------------------------------------
 // Functions for the fire alarm 
 // ---------------------------------------------
@@ -265,6 +264,23 @@ char *getPlate(){
         fgets(plate, sizeof(plate)+1, fp);
     }
     fclose(fp);
+
+
+
+    // 50% chance of making a random plate
+    if(randThread() % 2 == 0){
+        // Erase plate 
+        memset(plate, 0, 6);
+        // Generate 3 random numbers between 0 and 9
+        int j = 0;
+        for (j = 0; j < 3; j++) {
+            plate[j] = rand() % 10 + '0';
+        }
+        for (j = 3; j < 6; j++) {
+            plate[j] = rand() % 26 + 'A';
+        }
+    }
+
     return plate;
 }
 
