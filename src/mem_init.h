@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 
-#define TIME_SCALE 0.1
+#define TIME_SCALE 1
 #define MS_IN_MICROSECONDS 1000 * TIME_SCALE
 
 #define ENTRANCES 5
