@@ -11,7 +11,6 @@
 #define MS_IN_MICROSECONDS 1000 * TIME_SCALE
 #define QueueSize 100
 
-#define platesDir "../data/plates.txt"
 #define DEBUG 0
 
 // ---------------------------------------------
@@ -271,7 +270,7 @@ char *getPlate()
 {
     // Allocate memory for the plate
     char *plate = malloc(6);
-    FILE *fp = fopen(platesDir, "r");
+    FILE *fp = fopen(PLATES_DIR, "r");
     // Error check the file
     if (fp == NULL)
     {

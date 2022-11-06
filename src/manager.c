@@ -4,11 +4,10 @@
 #include "mem_init.h"
 #include <sys/time.h>
 #include <unistd.h>
+#include <hashBrowns.h>
 
 #define MS_IN_MICROSECONDS 1000
 #define CENTS_PER_MS 0.05
-
-#define BILLING_DIR "../data/billing.txt"
 
 #define DEBUG 0
 
@@ -59,16 +58,6 @@ int randThread(void)
     pthread_mutex_unlock(&rand_mutex);
     return randomNumber;
 }
-
-// Random generator for picking a carpark level
-// ---------------------------------------------
-// int randLevel(void){
-//     int randomLevel;
-//     randomLevel = randThread() % LEVELS;
-//     // Print level
-//     printf("Super Duper genertaed level: %d\n", randomLevel);
-//     return randomLevel;
-// }
 
 // Save shm and gate number in a struct
 typedef struct gate_data
@@ -155,6 +144,28 @@ void AppendToFile(lpr_sensor_t *lpr, int timeDiff)
     fclose(fp);
 }
 
+
+// start hashing here
+void ReadIntoHashTable()
+{
+    // Allocate memory for the plate
+    char *plate = malloc(6);
+    FILE *fp = fopen(PLATES_DIR, "r");
+    // Error check the file
+    if (fp == NULL)
+    {
+        printf("Error opening file");
+    }
+    // Pick a random line
+    int randomPlateLine = randThread() % 100 + 1;
+    // printf("Line: %d\n", randomPlateLine);
+    for (int i = 0; i < randomPlateLine; i++)
+    {
+        fgets(plate, sizeof(plate) + 1, fp);
+    }
+    fclose(fp);
+}
+
 /**
  * @brief Entrance handler for the car park.
  *
@@ -214,13 +225,6 @@ void *lprEntranceHandler(void *arg)
                 {
                     // Remove one from parking
                     parking[levelToPark] = parking[levelToPark] - 1;
-                    // Make char of level
-                    // char level_char = level + '0';
-
-                    // print the level
-
-                    // Level 0, level 1, level 2, level 3, level 4
-                    // level+1
 
                     if (levelToPark == 0)
                     {
@@ -260,8 +264,6 @@ void *lprEntranceHandler(void *arg)
             AddCarToCapacity(shm.data->entrance[gate].lpr_sensor.plate);
             pthread_mutex_unlock(&shm.data->entrance[gate].lpr_sensor.mutex);
         }
-
-        // pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
 
         pthread_cond_signal(&shm.data->entrance[gate].information_sign.cond);
     }
