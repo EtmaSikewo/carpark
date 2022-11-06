@@ -5,6 +5,8 @@
 
 #define MS_IN_MICROSECONDS 1000
 
+#define DEBUG 0
+
 // Global variables
 int parking[LEVELS];
 
@@ -53,6 +55,7 @@ int randThread(void)
 }
 
 // Save shm and gate number in a struct
+//! TODO change shm to a pointer
 typedef struct gate_data
 {
     shared_memory_t shm;
@@ -87,7 +90,6 @@ void *lprEntranceHandler(void *arg)
         }
         else
         {
-
             for (;;)
             {
                 // Pick a random level to park on
@@ -98,7 +100,8 @@ void *lprEntranceHandler(void *arg)
                 for (int i = 0; i < 5; i++)
                 {
                     int CanPark = check_parking_availability(i);
-                    printf("CanPark: %d\n", CanPark);
+                    if (DEBUG)
+                        printf("CanPark: %d\n", CanPark);
                 }
 
                 // Check if parking is available
@@ -120,7 +123,7 @@ void *lprEntranceHandler(void *arg)
                         strcpy(&shm.data->entrance[gate].information_sign.display, "1");
                         pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
                         // print the level
-                        printf("Level 0 chosen: %d\n", levelToPark);
+                        printf("Level 1 chosen: %d\n", levelToPark);
                         break;
                     }
                     else if (levelToPark == 1)
@@ -128,7 +131,7 @@ void *lprEntranceHandler(void *arg)
                         strcpy(&shm.data->entrance[gate].information_sign.display, "2");
                         pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
                         // print the level
-                        printf("Level 1 chosen: %d\n", levelToPark);
+                        printf("Level 2 chosen: %d\n", levelToPark);
                         break;
                     }
                     else if (levelToPark == 2)
@@ -136,7 +139,7 @@ void *lprEntranceHandler(void *arg)
                         strcpy(&shm.data->entrance[gate].information_sign.display, "3");
                         pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
                         // print the level
-                        printf("Level 2 chosen: %d\n", levelToPark);
+                        printf("Level 3 chosen: %d\n", levelToPark);
 
                         break;
                     }
@@ -145,7 +148,7 @@ void *lprEntranceHandler(void *arg)
                         strcpy(&shm.data->entrance[gate].information_sign.display, "4");
                         pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
                         // print the level
-                        printf("Level 3 chosen: %d\n", levelToPark);
+                        printf("Level 4 chosen: %d\n", levelToPark);
                         break;
                     }
                     else if (levelToPark == 4)
@@ -153,7 +156,13 @@ void *lprEntranceHandler(void *arg)
                         strcpy(&shm.data->entrance[gate].information_sign.display, "5");
                         pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
                         // print the level
-                        printf("Level 4 chosen: %d\n", levelToPark);
+                        printf("Level 5 chosen: %d", 4);
+                        printf(" for ");
+                        
+                        for (int i = 0; i < 6; i++)
+                        {
+                            printf("%s",  &shm.data->entrance[4].lpr_sensor.plate[i]);
+                        }
                         break;
                     }
                 }
@@ -161,7 +170,6 @@ void *lprEntranceHandler(void *arg)
         }
 
         // pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
-
         pthread_cond_signal(&shm.data->entrance[gate].information_sign.cond);
     }
 
@@ -208,8 +216,8 @@ void display(shared_memory_t shm)
 
 int main(void)
 {
-
-    srand(time(0));
+    //! TODO replace with time(0) or time(NULL) for seed
+    srand(69);
     setupParking();
     // // Sleep for abit
     // usleep(2000 * MS_IN_MICROSECONDS);
