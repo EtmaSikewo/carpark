@@ -170,7 +170,7 @@ static void emergency_mode(shared_memory_t *shm) {
 				//sign->display = *p;
                 (void)strcpy(&info->display, p);
 				pthread_cond_broadcast(&info->cond);
-				pthread_mutex_unlock(&info->mutex);
+				//pthread_mutex_unlock(&info->mutex);
 			}
 			usleep(20000);
 		}

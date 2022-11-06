@@ -370,7 +370,7 @@ void *carThread(void *shmCar){
     pthread_mutex_lock(&info->mutex);
     pthread_cond_wait(&info->cond, &info->mutex);
 
-    if (strcmp(&info->display, "F") == 0 || strcmp(&info->display, "X") == 0 ) {
+    if (info->display != '1' && info->display != '2' && info->display != '3' && info->display != '4' && info->display != '5') {
         // Print the rejection message
         printf("%s has been rejected\n", lpr->plate);
         // Unlock the mutex
@@ -566,7 +566,7 @@ int main(void)
         // Trigger a fire randomly 
         if (!(TriggerAlarmFixed && TriggerAlarmRateOfRise)) {
             // Randomly trigger a fire in 0.1% of the time
-            if (randThread() % 5000 == 0) {
+            if (randThread() % 2000 == 0) {
                 // RAndomly choose a fire alarm to trigger
                 int fireAlarm = rand() % 2;
                 if (fireAlarm == 0) {
