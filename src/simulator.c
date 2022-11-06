@@ -7,8 +7,6 @@
 #include "mem_init.h"
 
 
-// Global variables for the carpark simulator 
-// ---------------------------------------------
 // Definitions 
 #define TIME_SCALE 1
 #define MS_IN_MICROSECONDS 1000 * TIME_SCALE
@@ -17,6 +15,8 @@
 #define platesDir "../data/plates.txt"
 #define DEBUG 0
 
+// ---------------------------------------------
+// Global variables for the carpark simulator 
 // variables for car queue
 pthread_mutex_t queueEntry;
 pthread_mutex_t queueExit;
@@ -204,6 +204,8 @@ void *boomGateSimualtor(void *arg){
         // Broadcast the change to the boom gate
         pthread_cond_broadcast(&boom_gate->cond);
         //Print the boom gate status
+        if (DEBUG)
+            printf("Boom gate: Raised\n");
         usleep(20 * MS_IN_MICROSECONDS);
     }
     // If the boom gate has been set to open
@@ -218,11 +220,15 @@ void *boomGateSimualtor(void *arg){
         // Broadcast the change to the boom gate
         pthread_cond_broadcast(&boom_gate->cond);
         //Print the boom gate status
+        if (DEBUG)
+            printf("Boom gate: Lowered\n");
         usleep(20 * MS_IN_MICROSECONDS);
     }
     // If the boom gate is set to closed
     else if (boom_gate->status == 'C'){
-        //Print the boom gate status
+        // print the boom gate status
+        if (DEBUG)
+            printf("Boom gate: Closed\n");
     }
     // If the boom gate is set to an illegal status
     else{
@@ -510,7 +516,11 @@ int main(void)
     srand(time(0));
 
     shared_memory_t shm;
-    create_shared_object(&shm, "PARKING");
+    if(!create_shared_object(&shm, "PARKING"))
+    {
+        printf("Failed to create shared object\n");
+        return 1;
+    }
     setDefaults(shm);
 
     // create a thread to generate cars
@@ -604,12 +614,8 @@ int main(void)
             }
         }
 
-
-
-
         usleep(5 * MS_IN_MICROSECONDS);
-
     }
 
-
+    destroy_shared_object(&shm);
 }
