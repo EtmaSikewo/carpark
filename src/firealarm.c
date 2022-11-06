@@ -17,15 +17,12 @@
 
 static int alarm_active = 0;
 
-static int compare(const void *first, const void *second)
-{
-	return *((const int *)first) - *((const int *)second);
-}
-
 // start taken from https://www.codevscolor.com/c-program-find-median-array
 static void sort(int *arr, int size)
 {
-    int i, j, t;
+    int i;
+    int j;
+    int t;
 
     for (i = 0; i < size; i++)
     {
@@ -40,16 +37,18 @@ static void sort(int *arr, int size)
         }
     }
 }
-float getMedian(int *arr, int size)
+static float getMedian(int *arr, int size)
 {
-    if (size % 2 == 0)
+    float retVal;
+    if ((size % 2) == 0)
     {
-        return (arr[(size - 1) / 2] + arr[size / 2]) / 2.0;
+        retVal = (arr[(size - 1) / 2] + arr[size / 2]) / 2.0;
     }
     else
     {
-        return arr[size / 2];
+        retVal = arr[size / 2];
     }
+    return retVal;
 }
 // end taken from https://www.codevscolor.com/c-program-find-median-array
 
@@ -69,7 +68,6 @@ static void *tempmonitor(void *arg)
     int temparrayindex = 0;
     int smoothedtemparrayindex = 0;
     int tempOldest;
-
 
 	for (;;) {
 		// Calculate address of temperature sensor
@@ -145,6 +143,45 @@ static void *openboomgate(void *arg)
 	pthread_exit(NULL);
 }
 
+
+static void emergency_mode(shared_memory_t *shm) {
+	// Handle the alarm system and open boom gates
+	// Activate alarms on all levels
+	for (int i = 0; i < LEVELS; i++) {
+        shm->data->level[i].alarm = 1;
+	}
+	
+	// Open up all boom gates
+	for (int i = 0; i < ENTRANCES; i++) {
+        pthread_t boomgatethread;
+		pthread_create(&boomgatethread, NULL, &openboomgate, &shm->data->entrance[i].boom_gate);
+	}
+	for (int i = 0; i < EXITS; i++) {
+        pthread_t boomgatethread;
+		pthread_create(&boomgatethread, NULL, &openboomgate, &shm->data->exit[i].boom_gate);
+	}
+	
+	// Show evacuation message on an endless loop
+	for (;;) {
+		const char evacmessage[] = "EVACUATE ";
+		for (const char *p = evacmessage; *p != '\0'; p++) {
+			for (int i = 0; i < ENTRANCES; i++) {
+                information_sign_t *info = &shm->data->entrance[i].information_sign;
+				//int addr = 288 * i + 192;
+				//volatile struct parkingsign *sign = shm + addr;
+				pthread_mutex_lock(&info->mutex);
+				//sign->display = *p;
+                (void)strcpy(&info->display, p);
+				pthread_cond_broadcast(&info->cond);
+				pthread_mutex_unlock(&info->mutex);
+			}
+			usleep(20000);
+		}
+        
+	}
+}
+
+
 int main(int argc, char ** argv)
 {
 
@@ -161,46 +198,12 @@ int main(int argc, char ** argv)
 	}
 	for (;;) {
 		if (alarm_active == 1) {
-			goto emergency_mode;
+			emergency_mode(&shm);
 		}
 		usleep(1000);
 	}
 	
-	emergency_mode:
-	// Handle the alarm system and open boom gates
-	// Activate alarms on all levels
-	for (int i = 0; i < LEVELS; i++) {
-        shm.data->level[i].alarm = 1;
-	}
-	
-	// Open up all boom gates
-	for (int i = 0; i < ENTRANCES; i++) {
-        pthread_t boomgatethread;
-		pthread_create(&boomgatethread, NULL, &openboomgate, &shm.data->entrance[i].boom_gate);
-	}
-	for (int i = 0; i < EXITS; i++) {
-        pthread_t boomgatethread;
-		pthread_create(&boomgatethread, NULL, &openboomgate, &shm.data->exit[i].boom_gate);
-	}
-	
-	// Show evacuation message on an endless loop
-	for (;;) {
-		const char evacmessage[] = "EVACUATE ";
-		for (const char *p = evacmessage; *p != '\0'; p++) {
-			for (int i = 0; i < ENTRANCES; i++) {
-                information_sign_t *info = &shm.data->entrance[i].information_sign;
-				//int addr = 288 * i + 192;
-				//volatile struct parkingsign *sign = shm + addr;
-				pthread_mutex_lock(&info->mutex);
-				//sign->display = *p;
-                (void)strcpy(&info->display, p);
-				pthread_cond_broadcast(&info->cond);
-				pthread_mutex_unlock(&info->mutex);
-			}
-			usleep(20000);
-		}
-        
-	}
+
     munmap(shm.data, sizeof(shared_memory_data_t));
     shm_unlink(shm.name);
 }
