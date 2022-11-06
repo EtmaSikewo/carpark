@@ -12,6 +12,9 @@
 #define LEVELS 5
 #define PARKING_CAPACITY 20
 
+#define PLATES_DIR "../data/plates.txt"
+#define BILLING_DIR "../data/billing.txt"
+
 #define LICENCE_PLATE_SIZE 6
 
 typedef struct lpr_sensor
