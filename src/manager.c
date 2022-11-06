@@ -17,24 +17,31 @@ int parking[LEVELS];
 float totalBilling = 0;
 
 // Set each parking to parkingcapactiy
-void setupParking(){
-    for (int i = 0; i < LEVELS; i++) {
+void setupParking()
+{
+    for (int i = 0; i < LEVELS; i++)
+    {
         parking[i] = PARKING_CAPACITY;
     }
 }
 
 // Function to check car parking availability
-int check_parking_availability(int level) {
-    if (parking[level] > 0) {
+int check_parking_availability(int level)
+{
+    if (parking[level] > 0)
+    {
         return 1;
     }
     return 0;
 }
 
 // Function to check if all levels are full
-int check_all_levels_full() {
-    for (int i = 0; i < LEVELS; i++) {
-        if (parking[i] > 0) {
+int check_all_levels_full()
+{
+    for (int i = 0; i < LEVELS; i++)
+    {
+        if (parking[i] > 0)
+        {
             return 0;
         }
     }
@@ -44,7 +51,8 @@ int check_all_levels_full() {
 // The random function needs to be thread safe when generating random numbers
 // ---------------------------------------------
 pthread_mutex_t rand_mutex;
-int randThread(void){
+int randThread(void)
+{
     int randomNumber;
     pthread_mutex_lock(&rand_mutex);
     randomNumber = rand();
@@ -115,7 +123,7 @@ void AddCarToCapacity(char *licencePlate)
 
 /**
  * @brief Checks if the car is in the car list.
- * 
+ *
  * @param licencePlate Plate number of the car to be checked.
  * @return int 1 if the car is in the list, 0 otherwise.
  */
@@ -149,8 +157,8 @@ void AppendToFile(lpr_sensor_t *lpr, int timeDiff)
 
 /**
  * @brief Entrance handler for the car park.
- * 
- * 
+ *
+ *
  * @param arg Shared memory and gate number.
  * @return void* For threading.
  */
@@ -168,9 +176,10 @@ void *lprEntranceHandler(void *arg)
     strcpy(plate, lpr->plate);
 
     // Lock mutex
-    //pthread_mutex_lock(&lpr->mutex);
+    // pthread_mutex_lock(&lpr->mutex);
 
-    for (;;){
+    for (;;)
+    {
         // Wait for condition
         pthread_mutex_lock(&lpr->mutex);
         pthread_cond_wait(&lpr->cond, &lpr->mutex);
@@ -181,8 +190,9 @@ void *lprEntranceHandler(void *arg)
         pthread_mutex_lock(&shm.data->entrance[gate].information_sign.mutex);
 
         // Check if car park is full
-        if (check_all_levels_full()) {
-            //shm.data->entrance[gate].information_sign.display = 'F';
+        if (check_all_levels_full())
+        {
+            // shm.data->entrance[gate].information_sign.display = 'F';
             strcpy(&shm.data->entrance[gate].information_sign.display, "F");
             pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
             pthread_cond_signal(&shm.data->entrance[gate].information_sign.cond);
@@ -229,7 +239,7 @@ void *lprEntranceHandler(void *arg)
                     {
                         strcpy(&shm.data->entrance[gate].information_sign.display, "3");
                         pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
-                    
+
                         break;
                     }
                     else if (levelToPark == 3)
@@ -251,17 +261,16 @@ void *lprEntranceHandler(void *arg)
             pthread_mutex_unlock(&shm.data->entrance[gate].lpr_sensor.mutex);
         }
 
-        //pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
+        // pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
 
         pthread_cond_signal(&shm.data->entrance[gate].information_sign.cond);
-
     }
 
     return NULL;
 }
 
-
-void *lprExitHandler(void *arg) {
+void *lprExitHandler(void *arg)
+{
     gate_data_t *gate_data = arg;
     shared_memory_t shm = gate_data->shm;
     int gate = gate_data->gate;
@@ -269,7 +278,8 @@ void *lprExitHandler(void *arg) {
     lpr_sensor_t *lpr = &shm.data->exit[gate].lpr_sensor;
     struct timeval entryTime, exitTime;
 
-    for (;;) {
+    for (;;)
+    {
         pthread_mutex_lock(&lpr->mutex);
         pthread_cond_wait(&lpr->cond, &lpr->mutex);
         parking[gate]++;
@@ -288,9 +298,8 @@ void *lprExitHandler(void *arg) {
         }
         // calculate the time difference
         int timeDiff = (exitTime.tv_sec - entryTime.tv_sec) * 1000 + (exitTime.tv_usec - entryTime.tv_usec) / 1000;
-        AppendToFile(lpr, timeDiff);    //  writes to billing.txt
+        AppendToFile(lpr, timeDiff); //  writes to billing.txt
         pthread_mutex_unlock(&lpr->mutex);
-
 
         // calculate the price
         totalBilling += timeDiff * CENTS_PER_MS;
@@ -299,7 +308,8 @@ void *lprExitHandler(void *arg) {
     return NULL;
 }
 
-void display(shared_memory_t shm){     
+void display(shared_memory_t shm)
+{
     // ---------------------------------------------
     // Template for the manager UI
     // ---------------------------------------------
@@ -331,39 +341,45 @@ void display(shared_memory_t shm){
     level 4: 0/100
     level 5: 0/100
     */
-        //Clear the console each loop
+    // Clear the console each loop
     system("clear");
 
-        //Print the status of the boom gates
+    // Print the status of the boom gates
     printf("Status of the boom gates\n");
     printf("Entrances           Exits\n");
-        for(int i = 0; i < ENTRANCES; i++){
-            printf("%d: %c\t\t%d: %c\n", i+1, shm.data->entrance[i].boom_gate.status, i+1, shm.data->exit[i].boom_gate.status);
+    for (int i = 0; i < ENTRANCES; i++)
+    {
+        printf("%d: %c\t\t%d: %c\n", i + 1, shm.data->entrance[i].boom_gate.status, i + 1, shm.data->exit[i].boom_gate.status);
     }
     printf("\n");
-        //Print the status of the LPR sensors
+    // Print the status of the LPR sensors
     printf("Status of the LPR sensors\n");
     printf("Entrances\tExits\t\tLevel\n");
-        for(int i = 0; i < ENTRANCES; i++){
-            printf("%d: %-12s %d: %-12s %d: %-6s\n", i+1, shm.data->entrance[i].lpr_sensor.plate, i+1, shm.data->exit[i].lpr_sensor.plate, i+1, shm.data->level[i].lpr_sensor.plate);
+    for (int i = 0; i < ENTRANCES; i++)
+    {
+        printf("%d: %-12s %d: %-12s %d: %-6s\n", i + 1, shm.data->entrance[i].lpr_sensor.plate, i + 1, shm.data->exit[i].lpr_sensor.plate, i + 1, shm.data->level[i].lpr_sensor.plate);
     }
     printf("\n");
 
-        //Print the status of the information signs
+    // Print the status of the information signs
     printf("Status of the information signs\n");
-        for(int i = 0; i < ENTRANCES; i++){
-            printf("%d: %-3c  ", i+1, shm.data->entrance[i].information_sign.display);
+    for (int i = 0; i < ENTRANCES; i++)
+    {
+        printf("%d: %-3c  ", i + 1, shm.data->entrance[i].information_sign.display);
     }
     printf(" \n\n");
 
     // Print the parking information
     printf("Level information\n");
-        for(int i = 0; i < LEVELS; i++){
-            if (parking[i] == 0) {
-                printf("level %d: %d/%d\t%d°C |FULL|\n", i+1, abs(parking[i]-PARKING_CAPACITY), PARKING_CAPACITY, shm.data->level[i].temperature_sensor);
+    for (int i = 0; i < LEVELS; i++)
+    {
+        if (parking[i] == 0)
+        {
+            printf("level %d: %d/%d\t%d°C |FULL|\n", i + 1, abs(parking[i] - PARKING_CAPACITY), PARKING_CAPACITY, shm.data->level[i].temperature_sensor);
         }
-            else {
-                printf("level %d: %d/%d\t%d°C\n", i+1, abs(parking[i]-PARKING_CAPACITY), PARKING_CAPACITY, shm.data->level[i].temperature_sensor);
+        else
+        {
+            printf("level %d: %d/%d\t%d°C\n", i + 1, abs(parking[i] - PARKING_CAPACITY), PARKING_CAPACITY, shm.data->level[i].temperature_sensor);
         }
     }
 
@@ -374,8 +390,6 @@ void display(shared_memory_t shm){
     usleep(50 * MS_IN_MICROSECONDS);
 }
 
-
-
 int main(void)
 {
 
@@ -384,7 +398,7 @@ int main(void)
 
     //  create the shared memory segment
     shared_memory_t shm;
-    if(!get_shared_object(&shm, "PARKING"))
+    if (!get_shared_object(&shm, "PARKING"))
     {
         printf("Failed to read shared memory segment\n");
         return 1;
@@ -403,17 +417,19 @@ int main(void)
     pthread_t lprThreadExits[EXITS];
 
     // LPR memory
-    //Create a thead for each Entrance LPR
-    for (int i = 0; i < ENTRANCES; i++){
-        pthread_create(&lprThreadEntrances[i], NULL, lprEntranceHandler, (void *) (&entranceData[i]));
+    // Create a thead for each Entrance LPR
+    for (int i = 0; i < ENTRANCES; i++)
+    {
+        pthread_create(&lprThreadEntrances[i], NULL, lprEntranceHandler, (void *)(&entranceData[i]));
     }
 
-    for (int i = 0; i < EXITS; i++){
-        pthread_create(&lprThreadExits[i], NULL, lprExitHandler, (void *) (&entranceData[i]));
+    for (int i = 0; i < EXITS; i++)
+    {
+        pthread_create(&lprThreadExits[i], NULL, lprExitHandler, (void *)(&entranceData[i]));
     }
 
-    
-    for (;;){
+    for (;;)
+    {
         display(shm);
     }
     return 0;
