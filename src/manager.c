@@ -6,10 +6,7 @@
 #include "mem_init.h"
 #include "hash_browns.h"
 
-#define MS_IN_MICROSECONDS 1000
 #define CENTS_PER_MS 0.05
-
-#define DEBUG 0
 
 // Global variables
 int parking[LEVELS];
@@ -325,10 +322,10 @@ void *lprExitHandler(void *arg)
         pthread_mutex_unlock(&lpr->mutex);
 
         // calculate the price
-        if (fireAlarmActive == false) {
-        totalBilling += timeDiff * CENTS_PER_MS;
+        if (fireAlarmActive == false)
+        {
+            totalBilling += timeDiff * CENTS_PER_MS * (1.0 / TIME_SCALE);
         }
-        
     }
 
     return NULL;
@@ -391,7 +388,7 @@ void display(shared_memory_t shm)
     printf("Status of the information signs\n");
     for (int i = 0; i < ENTRANCES; i++)
     {
-        printf("%d: %-3c  ", i + 1, shm.data->entrance[i].information_sign.display);
+        printf("%d: %-3c\t", i + 1, shm.data->entrance[i].information_sign.display);
     }
     printf(" \n\n");
 
@@ -413,7 +410,7 @@ void display(shared_memory_t shm)
     printf("\nTotal Billing:\t$%.2f\n", totalBilling);
 
     printf("\n");
-    usleep(50 * MS_IN_MICROSECONDS);
+    usleep(50 * 1000);
 }
 
 

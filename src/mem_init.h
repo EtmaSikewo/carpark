@@ -7,15 +7,19 @@
 #include <unistd.h>
 #include <sys/types.h>
 
+#define TIME_SCALE 0.1
+#define MS_IN_MICROSECONDS 1000 * TIME_SCALE
+
 #define ENTRANCES 5
 #define EXITS 5
 #define LEVELS 5
 #define PARKING_CAPACITY 20
 
+#define LICENCE_PLATE_SIZE 6
 #define PLATES_DIR "../data/plates.txt"
 #define BILLING_DIR "../data/billing.txt"
 
-#define LICENCE_PLATE_SIZE 6
+#define DEBUG 0
 
 typedef struct lpr_sensor
 {

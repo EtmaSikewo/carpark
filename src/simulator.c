@@ -7,12 +7,8 @@
 #include "mem_init.h"
 
 // Definitions
-#define TIME_SCALE 1
-#define MS_IN_MICROSECONDS 1000 * TIME_SCALE
 #define QueueSize 100
-#define MAX_CARS 400
-
-#define DEBUG 0
+#define MAX_CARS 200
 
 // ---------------------------------------------
 // Global variables for the carpark simulator
