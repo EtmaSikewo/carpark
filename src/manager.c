@@ -241,19 +241,11 @@ void display(shared_memory_t shm){
         printf("Level information\n");
         for(int i = 0; i < LEVELS; i++){
             if (parking[i] == 0) {
-                printf("level %d: %d/%d |FULL|\n", i+1, abs(parking[i]-PARKING_CAPACITY), PARKING_CAPACITY);
+                printf("level %d: %d/%d\t%d°C |FULL|\n", i+1, abs(parking[i]-PARKING_CAPACITY), PARKING_CAPACITY, shm.data->level[i].temperature_sensor);
             }
             else {
-                printf("level %d: %d/%d\n", i+1, abs(parking[i]-PARKING_CAPACITY), PARKING_CAPACITY);
-            }
-            
-        }
-
-        // Print the temperature of each level 
-        printf("Temperature of each level\n");
-        for(int i = 0; i < LEVELS; i++){
-            // Print the temperature of each level
-            printf("level %d: %d\n", i+1, shm.data->level[i].temperature_sensor);
+                printf("level %d: %d/%d\t%d°C\n", i+1, abs(parking[i]-PARKING_CAPACITY), PARKING_CAPACITY, shm.data->level[i].temperature_sensor);
+            }   
         }
 
         printf("\n");
