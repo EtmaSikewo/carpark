@@ -7,7 +7,7 @@ all: carpark
 
 manager.o simulator.o firealarm.o:  mem_init.h
 
-carpark: manager.o simulator.o 
+carpark: manager.o simulator.o firealarm.o
 
 clean:	
 	 rm -f carpark *.o
