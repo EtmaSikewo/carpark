@@ -19,7 +19,7 @@ struct item
 
 void item_print(item_t *i)
 {
-    printf("key=%s value=%d", i->key, i->value);
+    printf("key=%s value=%d\n", i->key, i->value);
 }
 
 // A hash table mapping a string to an integer.
@@ -71,16 +71,16 @@ item_t *htab_bucket(htab_t *h, char *key)
 // pre: true
 // post: (return == NULL AND item not found)
 //       OR (strcmp(return->key, key) == 0)
-item_t *htab_find(htab_t *h, char *key)
+int htab_find(htab_t *h, char *key)
 {
     for (item_t *i = htab_bucket(h, key); i != NULL; i = i->next)
     {
         if (strcmp(i->key, key) == 0)
         { // found the key
-            return i;
+            return 1;
         }
     }
-    return NULL;
+    return 0;
 }
 
 // Add a key with value to the hash table.
@@ -183,3 +183,40 @@ void htab_destroy(htab_t *h)
     h->buckets = NULL;
     h->size = 0;
 }
+
+
+
+// int main(int argc, char **argv)
+// {
+//     // create a hash table with 10 buckets
+//     printf("creating hash table:\n");
+//     size_t buckets = 10;
+//     htab_t h;
+//     if (!htab_init(&h, buckets))
+//     {
+//         printf("failed to initialise hash table\n");
+//         return EXIT_FAILURE;
+//     }
+
+//     // add items to hash table and preint
+//     htab_add(&h, "hello", 1);
+//     htab_add(&h, "hello", 1); // violate pre-condition to get two hello's in table
+//     htab_add(&h, "world", 2);
+//     htab_print(&h);
+//     printf("\n");
+
+//     // find item in hash table
+//     printf("find item in hash table:\n");
+//     item_print(htab_find(&h, "hello"));
+//     printf("\n\n");
+
+//     // delete items from hash table and print
+//     printf("deleting items from hash table:\n");
+//     htab_delete(&h, "hello");
+//     htab_delete(&h, "world");
+//     htab_print(&h);
+//     printf("\n");
+
+//     // clean up hash table
+//     htab_destroy(&h);
+// }

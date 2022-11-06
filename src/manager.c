@@ -15,6 +15,7 @@
 int parking[LEVELS];
 float totalBilling = 0;
 bool fireAlarmActive = false;
+htab_t h;   //  hash table for holding plates
 
 // Set each parking to parkingcapactiy
 void setupParking()
@@ -117,13 +118,17 @@ void AddCarToCapacity(char *licencePlate)
  * @param licencePlate Plate number of the car to be checked.
  * @return int 1 if the car is in the list, 0 otherwise.
  */
-int DoesCarExist(char *licencePlate)
+int DoesCarExist(char *licencePlate, htab_t h)
 {
     // loop through car_list
     for (int i = 0; i < PARKING_CAPACITY * LEVELS + 10; i++)
     {
         if (strcmp(car_list[i].plate, licencePlate) == 0)
         {
+            if (htab_find(&h, licencePlate))
+            {
+                return 1;
+            }            
             // car exists
             return 1;
         }
@@ -145,50 +150,41 @@ void AppendToFile(lpr_sensor_t *lpr, int timeDiff)
     fclose(fp);
 }
 
-
 // start hashing here
-void ReadIntoHashTable()
+void ReadIntoHashTable(htab_t h)
 {
-    // // open the file and read from it
-    // FILE *fp = fopen(BILLING_DIR, "r");
-    // if (fp == NULL)
-    // {
-    //     printf("Error opening file! (READ ERR)\n");
-    //     exit(1);
-    // }
-    // // get all lines from the file
-    // char line[256];
-    // while (fgets(line, sizeof(line), fp))
-    // {
-    //     // get the plate number
-    //     char *plate = strtok(line, "\t");
-    //     // get the amount
-    //     char *amount = strtok(NULL, "\t");
-    //     // add to the hash table
-    //     hashBrowns(plate, amount);
-    // }
-
-
-
-
-
-    
-    // Allocate memory for the plate
-    char *plate = malloc(6);
+    // open the file and read from it
     FILE *fp = fopen(PLATES_DIR, "r");
-    // Error check the file
     if (fp == NULL)
     {
-        printf("Error opening file");
+        printf("Error opening file! (READ ERR)\n");
+        exit(1);
     }
-    // Pick a random line
-    int randomPlateLine = randThread() % 100 + 1;
-    // printf("Line: %d\n", randomPlateLine);
-    for (int i = 0; i < randomPlateLine; i++)
+    // get all lines from the file
+    char line[256];
+    int i = 0;
+    char *plate;
+    while (fgets(line, sizeof(line), fp))
     {
-        fgets(plate, sizeof(plate) + 1, fp);
+        // get the plate number
+        plate = strtok(line, "\n");
+        // add the plate number to the hash table
+        htab_add(&h, plate, i);
+        i++;
     }
     fclose(fp);
+}
+
+void InitHashTable(htab_t h)
+{
+    size_t buckets = 100 * 20;
+    if (!htab_init(&h, buckets))
+    {
+        printf("failed to initialise hash table\n");
+        exit(1);
+    }
+    ReadIntoHashTable(h);
+    //! TODO DESTROY HASH TABLE SOMEWHERE
 }
 
 /**
@@ -208,7 +204,7 @@ void *lprEntranceHandler(void *arg)
 
     lpr_sensor_t *lpr = &shm.data->entrance[gate].lpr_sensor;
     int levelToPark = 0;
-    char plate[6] = "      ";
+    char plate[6] = "      ";   //  6 spaces
     strcpy(plate, lpr->plate);
 
     // Lock mutex
@@ -233,7 +229,7 @@ void *lprEntranceHandler(void *arg)
             pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
             pthread_cond_signal(&shm.data->entrance[gate].information_sign.cond);
         }
-        else if (DoesCarExist(plate))
+        else if (DoesCarExist(plate, h))
         {
             strcpy(&shm.data->entrance[gate].information_sign.display, "X");
             pthread_mutex_unlock(&shm.data->entrance[gate].information_sign.mutex);
@@ -420,6 +416,8 @@ void display(shared_memory_t shm)
     usleep(50 * MS_IN_MICROSECONDS);
 }
 
+
+
 int main(void)
 {
 
@@ -434,6 +432,8 @@ int main(void)
         return 1;
     }
     InitCarCapacity();
+    InitHashTable(h);
+    
 
     gate_data_t entranceData[ENTRANCES];
     for (int i = 0; i < ENTRANCES; i++)

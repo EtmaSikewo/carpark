@@ -10,6 +10,7 @@
 #define TIME_SCALE 1
 #define MS_IN_MICROSECONDS 1000 * TIME_SCALE
 #define QueueSize 100
+#define MAX_CARS 400
 
 #define DEBUG 0
 
@@ -446,9 +447,8 @@ void *generateCar(void *shm)
     printf("Generating cars\n");
     // Setting the maxmium amount of spawned cars before queue implementation!!!
     //! TODO: Implement queue
-    int maximumCars = 200;
-    pthread_t cars[maximumCars];
-    for (int i = 0; i < maximumCars; i++)
+    pthread_t cars[MAX_CARS];
+    for (int i = 0; i < MAX_CARS; i++)
     {
         pthread_create(&cars[i], NULL, carThread, shm);
         // int time = (randThread() % (1000 - 1 + 1)) + 1; // create random wait time between 1-100ms
