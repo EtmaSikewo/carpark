@@ -11,6 +11,8 @@
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",
                 "-lrt",
+                "-Wall",
+                "-Werror",
                 "-pthread"
             ],
             "options": {
