@@ -12,6 +12,8 @@
 #define LEVELS 5
 #define PARKING_CAPACITY 20
 
+#define LICENCE_PLATE_SIZE 6
+
 typedef struct lpr_sensor
 {
     pthread_mutex_t mutex;

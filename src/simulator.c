@@ -10,6 +10,7 @@
 // Global variables for the carpark simulator 
 // ---------------------------------------------
 // Definitions 
+// #define TIME_SCALE 1.0
 #define MS_IN_MICROSECONDS 1000
 #define QueueSize 100
 
@@ -393,7 +394,9 @@ void *carThread(void *shmCar){
     lpr_sensor_t *exitLPR = &shm->exit[exitLevel].lpr_sensor;
     memcpy(exitLPR->plate, LicensePlate, 6);
 
-    sendCarToExit(exitLevel, lpr->plate, shm);
+    printf("%s took %dms\n", LicensePlate, waitTime);
+
+    sendCarToExit(exitLevel, LicensePlate, shm);
     
 
     return NULL;
@@ -401,8 +404,8 @@ void *carThread(void *shmCar){
 
 // Generate a car every 1-100ms 
 void *generateCar(void *shm ){
-    // Wait 10 seconds before generating cars
-    usleep(10000 * MS_IN_MICROSECONDS);
+    // Wait 6 seconds before generating cars
+    usleep(6000 * MS_IN_MICROSECONDS);
     printf("Generating cars\n");
     // Setting the maxmium amount of spawned cars before queue implementation!!!
     //!TODO: Implement queue
