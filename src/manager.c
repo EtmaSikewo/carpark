@@ -12,10 +12,12 @@
 #include <sys/time.h>
 
 #define MS_IN_MICROSECONDS 1000
+#define CENTS_PER_MS 0.05
 
 
 // Global variables
 int parking[LEVELS]; 
+float totalBilling = 0;
 
 // Set each parking to parkingcapactiy
 void setupParking(){
@@ -285,6 +287,7 @@ void *lprExitHandler(void *arg) {
         // long milliseconds = (exitTime.tv_sec - entryTime.tv_sec) * 1000 + exitTime.tv_usec - entryTime.tv_usec;
         // printf("%s stayed for %lims\n", lpr->plate, milliseconds);
         // pthread_mutex_unlock(&lpr->mutex);
+        totalBilling += timeDiff * CENTS_PER_MS;
     }
 
     return NULL;
@@ -357,6 +360,9 @@ void display(shared_memory_t shm){
                 printf("level %d: %d/%d\t%d°C\n", i+1, abs(parking[i]-PARKING_CAPACITY), PARKING_CAPACITY, shm.data->level[i].temperature_sensor);
             }   
         }
+        
+        // print the billing information
+        printf("\nTotal Billing:\t$%.2f\n", totalBilling);
 
         printf("\n");
         usleep(50 * MS_IN_MICROSECONDS);
