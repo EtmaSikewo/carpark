@@ -82,12 +82,10 @@ int GetRandLevel(void)
 void ActivateLPR(int destLevel, char licencePlate[LICENCE_PLATE_SIZE], shared_memory_data_t *p_shm)
 {
     lpr_sensor_t *p_lpr = &p_shm->entrance[destLevel].lpr_sensor;
-    memcpy(p_lpr->plate, licencePlate, LICENCE_PLATE_SIZE);
-    pthread_cond_signal(&p_lpr->cond);
 
     if (DEBUG)
         printf("%s has arrived at entrance %d\n", p_lpr->plate,
-               destLevel);
+               destLevel + 1); // dest + 1 because destLevel 1 is index 0
 }
 
 /**
@@ -101,6 +99,7 @@ void WaitForLPRorGate(int destLevel, shared_memory_data_t *p_shm)
     lpr_sensor_t *p_lpr = &p_shm->entrance[destLevel].lpr_sensor;
     information_sign_t *p_info = &p_shm->entrance[destLevel].information_sign;
     pthread_mutex_lock(&p_info->mutex);
+    // wait for LPR or gate to be free
     pthread_cond_wait(&p_info->cond, &p_info->mutex);
 
     if (strcmp(&p_info->display, "F") == 0 || strcmp(&p_info->display, "X") == 0)
@@ -113,12 +112,9 @@ void WaitForLPRorGate(int destLevel, shared_memory_data_t *p_shm)
         pthread_exit(NULL);
     }
 
-
-    // wait for LPR or gate to be free
-    pthread_cond_wait(&p_info->cond, &p_info->mutex);
     if (DEBUG)
         printf("%s has been granted access to level %c\n", p_lpr->plate,
-               p_shm->entrance[destLevel].information_sign.display + 1);
+               p_shm->entrance[destLevel].information_sign.display);
     pthread_mutex_unlock(&p_info->mutex);
 }
 
@@ -266,6 +262,20 @@ char *GenerateLicencePlate()
     return plate;
 }
 
+
+/**
+ * @brief Stores the plate of the car by input LPR.
+ * 
+ * @param licencePlate Plate to scan
+ * @param p_lpr LPR to store the plate
+ */
+void ScanPlate(char *licencePlate, lpr_sensor_t *p_lpr)
+{
+    memcpy(&p_lpr->plate, licencePlate, LICENCE_PLATE_SIZE);
+    pthread_cond_signal(&p_lpr->cond);
+}
+
+
 /**
  * @brief Sends a car to the desired level.
  *
@@ -275,13 +285,13 @@ char *GenerateLicencePlate()
 void sendCarToLevel(int8_t destLevel, shared_memory_data_t *p_shm)
 {
     information_sign_t *p_info = &p_shm->entrance[destLevel].information_sign;
-    lpr_sensor_t *p_lpr = &p_shm->entrance->lpr_sensor;
+    lpr_sensor_t *p_lpr = &p_shm->entrance[destLevel].lpr_sensor;
 
     // Simulate boom gate to open
     boom_gate_t *p_boom = &p_shm->entrance[destLevel].boom_gate;
     pthread_mutex_lock(&p_boom->mutex);
     ActivateBoomGate(destLevel, p_boom);
-    printf("%s heading to level: %c\n", p_lpr->plate, p_info->display + 1);
+    printf("%s heading to level: %c\n", p_lpr->plate, p_info->display);
     pthread_mutex_unlock(&p_boom->mutex);
 }
 
@@ -314,6 +324,7 @@ void *carThread(void *shmCar)
 
     //* step 3 - send the car to the entrance (activate the level LPR)
     // Access the entrance LPR sensor
+    ScanPlate(licencePlate, &p_shm->entrance[destLevel].lpr_sensor);
     ActivateLPR(destLevel, licencePlate, p_shm);
 
     //* step 4 - wait for LPR to choose a level
@@ -323,16 +334,14 @@ void *carThread(void *shmCar)
     sendCarToLevel(destLevel, p_shm);
 
     // level LPR
-    lpr_sensor_t *p_level_lpr = &p_shm->level[destLevel].lpr_sensor;
-    memcpy(p_level_lpr->plate, licencePlate, LICENCE_PLATE_SIZE);
+    ScanPlate(licencePlate, &p_shm->level[destLevel].lpr_sensor);
 
     // Leave car park after wait time
     usleep(waitTime * MS_IN_MICROSECONDS);
-    printf("%s is leaving through exit %d\n", licencePlate, exitLevel + 1);
+    // printf("%s is leaving through exit %d\n", licencePlate, exitLevel + 1);
 
     //trigger exit LPR
-    lpr_sensor_t *p_exit_lpr = &p_shm->exit[exitLevel].lpr_sensor;
-    memcpy(p_exit_lpr->plate, licencePlate, LICENCE_PLATE_SIZE);
+    ScanPlate(licencePlate, &p_shm->exit[exitLevel].lpr_sensor);
 
     //sendcartoexit(); (same as sendtolevel without display)
 
@@ -376,7 +385,6 @@ void setBoomGateStatus(boom_gate_t *boom_gate, char status)
 
 void setDefaults(shared_memory_t shm)
 {
-
     pthread_attr_t pthreadAttr;
     pthread_mutexattr_t mutexAttr;
     pthread_condattr_t condAttr;
@@ -450,9 +458,11 @@ int main(void)
 
     printf("Welcome to the simulator\n");
     // Set the seed of the random number generator
-    srand(time(0));
+    //!TODO replace with time(0)
+    srand(69);
 
     shared_memory_t shm;
+    //! TODO destroy_shared_object() on exit
     create_shared_object(&shm, "PARKING");
     setDefaults(shm);
 
@@ -489,3 +499,7 @@ int main(void)
         usleep(5 * MS_IN_MICROSECONDS);
     }
 }
+
+
+
+
