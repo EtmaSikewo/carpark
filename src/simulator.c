@@ -413,7 +413,7 @@ void *carThread(void *shmCar)
 
     pthread_mutex_unlock(&info->mutex);
 
-    sendCarToLevel(level, info->display, lpr->plate, shm);
+    sendCarToLevel(level, exitLevel, lpr->plate, shm);
 
     //! TODO TIMINGS
     // trigger level LPR
