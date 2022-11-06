@@ -17,7 +17,7 @@ firealarm.o: firealarm.h
 	$(CC) $(LDFLAGS) -o firealarm.o firealarm.c $(LIBS)
 simulator.o: 
 	$(CC) $(LDFLAGS) -o simulator.o simulator.c $(LIBS)
-manager.o: 
+manager.o: billing.h
 	$(CC) $(LDFLAGS) -o manager.o manager.c $(LIBS)
 
 carpark: manager.o simulator.o firealarm.o
