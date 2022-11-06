@@ -406,7 +406,7 @@ int main(void)
 
     
     for (;;){
-        // display(shm);
+        display(shm);
     }
    
 
