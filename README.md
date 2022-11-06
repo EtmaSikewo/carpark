@@ -6,55 +6,51 @@ Check == attempted
 ~~cancelled~~
 
 # Simulator
- -  Intalise memory (Check)
- -  Init other mutex (TODO)
- -  Generate a car 1-100ms (Check)
- -  Car logic (TODO)
+ -  Intalise memory (✅)
+ -  Init other mutex (✅)
+ -  Generate a car 1-100ms (✅)
+ -  Car logic (check)
     - ~~Add car queue (TODO)~~
-    - Send car to entrance boom gate (Check)
-    - Send license to LPR (Check)
-    - Wait for manager to display info sign (check)
-    - Wait for boomgate to open (check)
-    - Drive to level {Trigger Level LPR} (check)
-    - Park to set time (check)
-    - Exit park on set level and trigger exit LPR (check)
-    - Wait for exit boomgate (check)
+    - Send car to entrance boom gate (✅)
+    - Send license to LPR (✅)
+    - Wait for manager to display info sign (✅)
+    - Wait for boomgate to open (✅)
+    - Drive to level {Trigger Level LPR} (✅)
+    - Park to set time (✅)
+    - Exit park on set level and trigger exit LPR (✅)
+    - Wait for exit boomgate (✅)
     - Die (✅)
 
 # Manager 
-- Load shared memory (Check)
-- Create LPR threads (Check)
+- Load shared memory (✅)
+- Create LPR threads (✅)
     - Entrace LPR
-        - Read plate of car (Check)
-        - Display parking level on info sign (Check)
-        - open entrance boom gate   (Check)
-        - close entrance boom gate  (Check)
+        - Read plate of car (✅)
+        - Display parking level on info sign (✅)
+        - open entrance boom gate   (✅)
+        - close entrance boom gate  (✅)
     - Level LPR
-        - BRR idk trigger parked    (check)
+        - BRR idk trigger parked    (✅)
     - Exit LPR
-        - Reads plate   (Check)
-        - Opens/Close boomgate (Check)
-        - Free the parking spot (check)
-        - Trigger billing (TODO:)
+        - Reads plate   (✅)
+        - Opens/Close boomgate (✅)
+        - Free the parking spot (✅)
+        - Trigger billing (✅)
 - Hash table
     - Check validity of plate (TODO)
     - Reject invalid car    (TODO)
 - Manage carspaces 
-    - Send cars to free parking levels (Check)
-    - Reject car if full (Check)
+    - Send cars to free parking levels (✅)
+    - Reject car if full (✅)
 - Billing 
-    - Charge for each car   (TODO)
-    - Total revenue (TODO)
+    - Charge for each car   (✅)
+    - Total revenue (✅)
 
 - UI
-    - Display info (Check)
+    - Display info (✅)
 
-    /**TODO:
 
-    # BILLING
-    
-    # TEMP SENSE ON EACH LEVEL
-    # HASH TABLE
 
-    # MAKE VIDEO
-    **/
+    #TODO HASH TABLE
+
+    #TODO MAKE VIDEO

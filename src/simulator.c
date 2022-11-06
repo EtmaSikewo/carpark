@@ -234,8 +234,8 @@ void *boomGateSimualtor(void *arg){
     pthread_mutex_unlock(&boom_gate->mutex);
 
     // Exit the thread
-    return NULL;
     pthread_exit(NULL);
+    return NULL;
 }
 
 // ---------------------------------------------
@@ -357,8 +357,6 @@ void *carThread(void *shmCar){
 
     // TO THIS POINT
 
-    
-
     //Wait for the info sign to say the car can enter
     information_sign_t *info = &shm->entrance[level].information_sign;
     pthread_mutex_lock(&info->mutex);
@@ -394,6 +392,7 @@ void *carThread(void *shmCar){
     //Trigger exit LPR
     lpr_sensor_t *exitLPR = &shm->exit[exitLevel].lpr_sensor;
     memcpy(exitLPR->plate, LicensePlate, 6);
+    
     if (DEBUG)
         printf("%s took %dms\n", LicensePlate, waitTime);
 
