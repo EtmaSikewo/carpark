@@ -1,8 +1,6 @@
 #Makefile for carpark assignment
 CC = gcc
 CFLAGS = -Wall -Werror -pedantic
-# Flags for linking (none for the moment)
-LDFLAGS =
 # Libraries to link with (none for the moment)
 LIBS = -lpthread -lrt
 # This creates a list of object files from the source files
@@ -14,11 +12,11 @@ all: carpark
 
 manager.o simulator.o firealarm.o:  mem_init.h
 firealarm.o:
-	$(CC) $(LDFLAGS) -o firealarm.o firealarm.c $(LIBS)
+	$(CC) $(CFLAGS) -o firealarm.o firealarm.c $(LIBS)
 simulator.o: 
-	$(CC) $(LDFLAGS) -o simulator.o simulator.c $(LIBS)
+	$(CC) $(CFLAGS) -o simulator.o simulator.c $(LIBS)
 manager.o: 
-	$(CC) $(LDFLAGS) -o manager.o manager.c $(LIBS)
+	$(CC) $(CFLAGS) -o manager.o manager.c $(LIBS)
 
 carpark: manager.o simulator.o firealarm.o
 

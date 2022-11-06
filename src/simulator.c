@@ -10,7 +10,7 @@
 // Global variables for the carpark simulator 
 // ---------------------------------------------
 // Definitions 
-#define TIME_SCALE 10
+#define TIME_SCALE 1
 #define MS_IN_MICROSECONDS 1000 * TIME_SCALE
 #define QueueSize 100
 

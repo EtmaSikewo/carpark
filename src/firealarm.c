@@ -1,5 +1,5 @@
 //#include <stdio.h>
-#include <stdlib.h>
+//#include <stdlib.h>
 #include <pthread.h>
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -56,15 +56,11 @@ static float getMedian(int *arr, int size)
 static void *tempmonitor(void *arg)
 {
     level_t *level = arg;
-	struct tempnode *templist = NULL;
-    struct tempnode *medianlist = NULL;
-    struct tempnode *oldesttemp;
 
     int temparray[MEDIAN_WINDOW] = {0};
     int sortarray[MEDIAN_WINDOW] = {0};
     int smoothedtemparray[TEMPCHANGE_WINDOW] = {0};
     int tempsReceived = 0;
-    int smoothedTemps = 0;
     int temparrayindex = 0;
     int smoothedtemparrayindex = 0;
     int tempOldest;
