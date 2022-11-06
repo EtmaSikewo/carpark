@@ -23,7 +23,7 @@ static struct tempnode *deletenodes(struct tempnode *templist, int after)
 		templist->next = deletenodes(templist->next, after - 1);
 	}
 	if (after <= 0) {
-		free(templist);
+		//free(templist);
 		templist = NULL;
 	}
 	return templist;
@@ -37,11 +37,10 @@ static void *tempmonitor(void *arg)
 {
     level_t *level = arg;
 	struct tempnode *templist = NULL;
-	struct tempnode *newtemp;
+	
     struct tempnode *medianlist = NULL;
     struct tempnode *oldesttemp;
     int count;
-	int temp;
     int mediantemp;
     int hightemps;
 
@@ -49,13 +48,14 @@ static void *tempmonitor(void *arg)
 		// Calculate address of temperature sensor
 		//addr = 0150 * level + 2496;
 		//temp = *((int16_t *)(shm + addr));
-        temp = level->temperature_sensor;
+        int temp = level->temperature_sensor;
 		
 		// Add temperature to beginning of linked list
-		newtemp = malloc(sizeof(struct tempnode));
-		newtemp->temperature = temp;
-		newtemp->next = templist;
-		templist = newtemp;
+		struct tempnode newtemp;
+        //newtemp = malloc(sizeof(struct tempnode));
+		newtemp.temperature = temp;
+		newtemp.next = templist;
+		templist = &newtemp;
 		
 		// Delete nodes after 5th
 		(void)deletenodes(templist, MEDIAN_WINDOW);
@@ -67,7 +67,8 @@ static void *tempmonitor(void *arg)
 		}
 		
 		if (count == MEDIAN_WINDOW) { // Temperatures are only counted once we have 5 samples
-			int *sorttemp = malloc(sizeof(int) * MEDIAN_WINDOW);
+			//int *sorttemp = malloc(sizeof(int) * MEDIAN_WINDOW);
+            int sorttemp[MEDIAN_WINDOW] = {0};
 			count = 0;
 			for (struct tempnode *t = templist; t != NULL; t = t->next) {
                 count++;
@@ -77,10 +78,11 @@ static void *tempmonitor(void *arg)
 			mediantemp = sorttemp[(MEDIAN_WINDOW - 1) / 2];
 			
 			// Add median temp to linked list
-			newtemp = malloc(sizeof(struct tempnode));
-			newtemp->temperature = mediantemp;
-			newtemp->next = medianlist;
-			medianlist = newtemp;
+			//newtemp = malloc(sizeof(struct tempnode));
+            struct tempnode newtemp;
+			newtemp.temperature = mediantemp;
+			newtemp.next = medianlist;
+			medianlist = &newtemp;
 			
 			// Delete nodes after 30th
 			(void)deletenodes(medianlist, TEMPCHANGE_WINDOW);
