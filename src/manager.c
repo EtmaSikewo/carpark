@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "mem_init.h"
 #include <sys/time.h>
 #include <unistd.h>
-#include <hashBrowns.h>
+#include "mem_init.h"
+#include "hash_browns.h"
 
 #define MS_IN_MICROSECONDS 1000
 #define CENTS_PER_MS 0.05
@@ -149,6 +149,30 @@ void AppendToFile(lpr_sensor_t *lpr, int timeDiff)
 // start hashing here
 void ReadIntoHashTable()
 {
+    // // open the file and read from it
+    // FILE *fp = fopen(BILLING_DIR, "r");
+    // if (fp == NULL)
+    // {
+    //     printf("Error opening file! (READ ERR)\n");
+    //     exit(1);
+    // }
+    // // get all lines from the file
+    // char line[256];
+    // while (fgets(line, sizeof(line), fp))
+    // {
+    //     // get the plate number
+    //     char *plate = strtok(line, "\t");
+    //     // get the amount
+    //     char *amount = strtok(NULL, "\t");
+    //     // add to the hash table
+    //     hashBrowns(plate, amount);
+    // }
+
+
+
+
+
+    
     // Allocate memory for the plate
     char *plate = malloc(6);
     FILE *fp = fopen(PLATES_DIR, "r");
@@ -306,7 +330,7 @@ void *lprExitHandler(void *arg)
 
         // calculate the price
         if (fireAlarmActive == false) {
-            totalBilling += timeDiff * CENTS_PER_MS;
+        totalBilling += timeDiff * CENTS_PER_MS;
         }
         
     }

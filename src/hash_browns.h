@@ -110,10 +110,10 @@ bool htab_add(htab_t *h, char *key, int value)
 // post: hash table is printed to screen
 void htab_print(htab_t *h)
 {
-    printf("hash table with %d buckets\n", h->size);
+    printf("hash table with %ld buckets\n", h->size);
     for (size_t i = 0; i < h->size; ++i)
     {
-        printf("bucket %d: ", i);
+        printf("bucket %ld: ", i);
         if (h->buckets[i] == NULL)
         {
             printf("empty\n");
@@ -182,39 +182,4 @@ void htab_destroy(htab_t *h)
     free(h->buckets);
     h->buckets = NULL;
     h->size = 0;
-}
-
-int main(int argc, char **argv)
-{
-    // create a hash table with 10 buckets
-    printf("creating hash table:\n");
-    size_t buckets = 10;
-    htab_t h;
-    if (!htab_init(&h, buckets))
-    {
-        printf("failed to initialise hash table\n");
-        return EXIT_FAILURE;
-    }
-
-    // add items to hash table and preint
-    htab_add(&h, "hello", 1);
-    htab_add(&h, "hello", 1); // violate pre-condition to get two hello's in table
-    htab_add(&h, "world", 2);
-    htab_print(&h);
-    printf("\n");
-
-    // find item in hash table
-    printf("find item in hash table:\n");
-    item_print(htab_find(&h, "hello"));
-    printf("\n\n");
-
-    // delete items from hash table and print
-    printf("deleting items from hash table:\n");
-    htab_delete(&h, "hello");
-    htab_delete(&h, "world");
-    htab_print(&h);
-    printf("\n");
-
-    // clean up hash table
-    htab_destroy(&h);
 }
