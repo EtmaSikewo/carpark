@@ -15,9 +15,9 @@ all: carpark
 manager.o simulator.o firealarm.o:  mem_init.h
 firealarm.o: firealarm.h
 	$(CC) $(LDFLAGS) -o firealarm.o firealarm.c $(LIBS)
-simulator.o:
+simulator.o: 
 	$(CC) $(LDFLAGS) -o simulator.o simulator.c $(LIBS)
-manager.o:
+manager.o: 
 	$(CC) $(LDFLAGS) -o manager.o manager.c $(LIBS)
 
 carpark: manager.o simulator.o firealarm.o
@@ -26,9 +26,13 @@ carpark: manager.o simulator.o firealarm.o
 $(EXE): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS) -o  $(EXE) $(LIBS)
 
+
 # This is a target that will compiler all needed source files into object files
 # We don't need to specify a command or any rules, "make" will handle it automatically
 %.o: %.c
+
+clean:	
+	 rm -f carpark *.o
 
 clean:
 	rm -f carpark *.o
