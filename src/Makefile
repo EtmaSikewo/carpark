@@ -15,7 +15,7 @@ firealarm.o:
 	$(CC) $(CFLAGS) -o firealarm.o firealarm.c $(LIBS)
 simulator.o: 
 	$(CC) $(CFLAGS) -o simulator.o simulator.c $(LIBS)
-manager.o: 
+manager.o: hash_browns.h
 	$(CC) $(CFLAGS) -o manager.o manager.c $(LIBS)
 
 carpark: manager.o simulator.o firealarm.o

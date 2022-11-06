@@ -8,7 +8,7 @@
 
 // Definitions
 #define QueueSize 100
-#define MAX_CARS 200
+#define MAX_CARS 2500
 
 // ---------------------------------------------
 // Global variables for the carpark simulator
@@ -586,7 +586,7 @@ int main(void)
         // Trigger a fire randomly 
         if ((!TriggerAlarmFixed && !TriggerAlarmRateOfRise)) {
             // Randomly trigger a fire in 0.1% of the time
-            if (randThread() % 10000 == 0) {
+            if (randThread() % 1000 == 0) {
                 // RAndomly choose a fire alarm to trigger
                 int fireAlarm = rand() % 2;
                 if (fireAlarm == 0)
