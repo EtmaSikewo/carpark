@@ -55,7 +55,7 @@ typedef struct exit
 typedef struct level
 {
     lpr_sensor_t lpr_sensor;
-    int16_t temperature_sensor;
+    uint16_t temperature_sensor;
     char alarm;         // default is '0'
     uint8_t padding[5]; //  padding
 } level_t;

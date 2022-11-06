@@ -6,6 +6,7 @@
 #include <math.h>
 #include "mem_init.h"
 
+
 // Global variables for the carpark simulator 
 // ---------------------------------------------
 // Definitions 
@@ -18,6 +19,10 @@
 pthread_mutex_t queueEntry;
 pthread_mutex_t queueExit;
 int carLevelCount[LEVELS] = {0};
+
+// variables for fire alarm 
+bool TriggerAlarmFixed = false;
+bool TriggerAlarmRateOfRise = false;
 
 
 // ---------------------------------------------
@@ -97,6 +102,61 @@ void *initDisplay(void *arg)
     }
     return NULL;
 }
+
+
+// ---------------------------------------------
+// Functions for the fire alarm 
+// ---------------------------------------------
+
+// Structure to hold the shared memory and level of the fire alarm
+typedef struct fireAlarm {
+    shared_memory_t shm;
+    int level;
+} fireAlarm_t;
+
+void *TemperatureSensor(void *arg){
+    // Get the level from the fireAlarm struct
+    //fireAlarm *fire = arg;
+    //int level = fire->level;
+    //shared_memory_data_t *data = &fire->shm;
+
+    // Get the shared memory data from arg 
+    shared_memory_data_t *data = arg;
+    
+    int temperature;
+    for(;;){
+        // Loop through the levels
+        for(int i = 0; i < LEVELS; i++){
+        
+            if(TriggerAlarmFixed){
+                // Set the fire alarm to true
+                data->level[i].temperature_sensor = 60;
+            }
+            else if(TriggerAlarmRateOfRise){
+                // If value is not higher than 500
+                if(data->level[i].temperature_sensor < 500){
+                // 10% chance of raising the temperature by 1
+                    if(randThread() % 10 == 0){
+                        data->level[i].temperature_sensor += 1;
+                    }
+                } 
+            }
+            else{
+                // Generate a temperature between 28 and 32
+                temperature = randThread() % 5 + 28;
+                // Set the temperature in the shared memory
+                data->level[i].temperature_sensor = temperature;
+            }
+
+            // Print the temperature
+            //printf("Temperature sensor: Level %d, Temperature: %d\n", i, data->level[i].temperature_sensor);
+        }
+        // Wait 2ms
+        usleep(2 * MS_IN_MICROSECONDS);
+    }
+
+}
+
 
 
 // ---------------------------------------------
@@ -455,10 +515,27 @@ int main(void)
     //shared_memory_t *shmCar = &shm;
 
     shared_memory_data_t *shmCar = shm.data;
+    shared_memory_data_t *shmFire = shm.data;
     
 
     //lpr_sensor_t *lpr2 = &shm.data->entrance->lpr_sensor;
     pthread_create(&carGen, NULL, generateCar, (void *) shmCar);
+
+    
+
+    // Create threads for temperature sensor 
+    //fireAlarm_t fire[LEVELS];
+    
+
+    // Make one thread of temperature sensor 
+    pthread_t firethreads;
+    pthread_create(&firethreads, NULL, TemperatureSensor, (void *) shmFire);
+
+    
+    //pthread_t fireThreads[LEVELS];
+
+
+
 
     // Change level 4 LPR plate 
 
@@ -470,6 +547,25 @@ int main(void)
     // free(plate);
 
     for (;;) {
+
+
+        // Trigger a fire randomly 
+        if (!(TriggerAlarmFixed && TriggerAlarmRateOfRise)) {
+            // Randomly trigger a fire in 0.1% of the time
+            if (randThread() % 5000 == 0) {
+                // RAndomly choose a fire alarm to trigger
+                int fireAlarm = rand() % 2;
+                if (fireAlarm == 0) {
+                    TriggerAlarmFixed = true;
+                    printf("Fire simulated fixed\n");
+                } else {
+                    TriggerAlarmRateOfRise = true;
+                    printf("Fire simulated rise\n");
+                }
+                
+            }
+        }
+
 
         // // Close the boom gates for testing
         // for (int i = 0; i < ENTRANCES; i++) {

@@ -248,8 +248,15 @@ void display(shared_memory_t shm){
             
         }
 
+        // Print the temperature of each level 
+        printf("Temperature of each level\n");
+        for(int i = 0; i < LEVELS; i++){
+            // Print the temperature of each level
+            printf("level %d: %d\n", i+1, shm.data->level[i].temperature_sensor);
+        }
+
         printf("\n");
-        usleep(500 * MS_IN_MICROSECONDS);
+        usleep(50 * MS_IN_MICROSECONDS);
     }
 
 
