@@ -265,8 +265,6 @@ char *getPlate(){
     }
     fclose(fp);
 
-
-
     // 50% chance of making a random plate
     if(randThread() % 2 == 0){
         // Erase plate 
@@ -580,9 +578,9 @@ int main(void)
 
 
         // Trigger a fire randomly 
-        if (!(TriggerAlarmFixed && TriggerAlarmRateOfRise)) {
+        if ((!TriggerAlarmFixed && !TriggerAlarmRateOfRise)) {
             // Randomly trigger a fire in 0.1% of the time
-            if (randThread() % 2000 == 0) {
+            if (randThread() % 10000 == 0) {
                 // RAndomly choose a fire alarm to trigger
                 int fireAlarm = rand() % 2;
                 if (fireAlarm == 0) {

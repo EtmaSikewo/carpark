@@ -15,6 +15,7 @@
 // Global variables
 int parking[LEVELS];
 float totalBilling = 0;
+bool fireAlarmActive = false;
 
 // Set each parking to parkingcapactiy
 void setupParking(){
@@ -293,7 +294,10 @@ void *lprExitHandler(void *arg) {
 
 
         // calculate the price
-        totalBilling += timeDiff * CENTS_PER_MS;
+        if (fireAlarmActive == false) {
+            totalBilling += timeDiff * CENTS_PER_MS;
+        }
+        
     }
 
     return NULL;
@@ -415,6 +419,13 @@ int main(void)
     
     for (;;){
         display(shm);
+
+        // Check if firealarm is triggered
+        if (shm.data->level->alarm == 1) {
+            printf("Fire alarm triggered!\n");
+            fireAlarmActive = 1;
+        }
+
     }
     return 0;
 }
