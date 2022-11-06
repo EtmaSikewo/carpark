@@ -20,7 +20,6 @@ manager.o:
 
 carpark: manager.o simulator.o firealarm.o
 
-
 # This is a target that will compiler all needed source files into object files
 # We don't need to specify a command or any rules, "make" will handle it automatically
 %.o: %.c
