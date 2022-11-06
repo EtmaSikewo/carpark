@@ -48,9 +48,3 @@ Check == attempted
 
 - UI
     - Display info (✅)
-
-
-
-    #TODO HASH TABLE
-
-    #TODO MAKE VIDEO
